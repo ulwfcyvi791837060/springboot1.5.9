@@ -61,3 +61,10 @@ mybatis:
 management:
   security:
     enabled: false
+
+
+dbf:
+  store:
+    location_id: 7023
+    store_id: 01060125
+    store_name: 满记甜品
