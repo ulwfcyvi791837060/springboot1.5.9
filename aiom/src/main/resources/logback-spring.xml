@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- 此xml在spring-boot-1.5.3.RELEASE.jar里 -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml" />
+<!--     <include resource="org/springframework/boot/logging/logback/console-appender.xml" /> -->
+
+	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%d [%thread] %p (%file:%line\)- %m%n</pattern>
+			<!--<pattern>%d{HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>-->
+			<charset>UTF-8</charset>
+		</encoder>
+	</appender>
+
+    <!--按天生成日志 -->
+    <appender name="logFile"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <Prudent>true</Prudent>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <FileNamePattern>
+                logback_spring_log/%d{yyyy-MM-dd}/%d{yyyy-MM-dd}.log
+            </FileNamePattern>
+        </rollingPolicy>
+
+        <!--
+    日志输出格式：%d表示日期时间，%thread表示线程名，%-5level：级别从左显示5个字符宽度
+    %logger{50} 表示logger名字最长50个字符，否则按照句点分割。 %msg：日志消息，%n是换行符
+    %d [%thread] %p (%file:%line\)- %m%n
+    -->
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] (%file:%line\) %-5level %logger{50} - %msg%n</pattern>
+        </layout>
+
+    </appender>
+    <!--<logger name="org.springframework" level="error"/>-->
+    <!--<logger name="jdbc.connection" level="OFF"/>-->
+    <!--<logger name="org.apache" level="error"/>-->
+    <!--<logger name="com.alibaba" level="error"/>-->
+    <!--<logger name="org.apache.kafka.clients.producer.ProducerConfig" level="warn"/>-->
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="logFile"/>
+    </root>
+</configuration>

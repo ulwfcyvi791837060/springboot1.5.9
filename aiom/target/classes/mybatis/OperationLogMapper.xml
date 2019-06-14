@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yyx.aio.mapper.OperationLogMapper" >
+  <resultMap id="BaseResultMap" type="com.yyx.aio.entity.OperationLog" >
+    <id column="ol_id" property="id" jdbcType="BIGINT" />
+    <result column="ol_user_id" property="userId" jdbcType="BIGINT" />
+    <result column="ol_oper_time" property="operTime" jdbcType="TIMESTAMP" />
+    <result column="ol_request_uri" property="requestUri" jdbcType="VARCHAR" />
+    <result column="ol_request_millis" property="requestMillis" jdbcType="BIGINT" />
+    <result column="ol_request_param" property="requestParam" jdbcType="VARCHAR" />
+    <result column="ol_request_result" property="requestResult" jdbcType="VARCHAR" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    ol.id as ol_id, ol.user_id as ol_user_id, ol.oper_time as ol_oper_time, ol.request_uri as ol_request_uri, 
+    ol.request_millis as ol_request_millis, ol.request_param as ol_request_param, ol.request_result as ol_request_result
+  </sql>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Long" >
+    select 
+    <include refid="Base_Column_List" />
+    from operation_log ol
+    where ol.id = #{id,jdbcType=BIGINT}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Long" >
+    delete from operation_log
+    where id = #{id,jdbcType=BIGINT}
+  </delete>
+  <insert id="insert" parameterType="com.yyx.aio.entity.OperationLog" >
+    insert into operation_log (id, user_id, oper_time, 
+      request_uri, request_millis, request_param, 
+      request_result)
+    values (#{id,jdbcType=BIGINT}, #{userId,jdbcType=BIGINT}, #{operTime,jdbcType=TIMESTAMP}, 
+      #{requestUri,jdbcType=VARCHAR}, #{requestMillis,jdbcType=BIGINT}, #{requestParam,jdbcType=VARCHAR}, 
+      #{requestResult,jdbcType=VARCHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="com.yyx.aio.entity.OperationLog" >
+    insert into operation_log
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        id,
+      </if>
+      <if test="userId != null" >
+        user_id,
+      </if>
+      <if test="operTime != null" >
+        oper_time,
+      </if>
+      <if test="requestUri != null" >
+        request_uri,
+      </if>
+      <if test="requestMillis != null" >
+        request_millis,
+      </if>
+      <if test="requestParam != null" >
+        request_param,
+      </if>
+      <if test="requestResult != null" >
+        request_result,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=BIGINT},
+      </if>
+      <if test="userId != null" >
+        #{userId,jdbcType=BIGINT},
+      </if>
+      <if test="operTime != null" >
+        #{operTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="requestUri != null" >
+        #{requestUri,jdbcType=VARCHAR},
+      </if>
+      <if test="requestMillis != null" >
+        #{requestMillis,jdbcType=BIGINT},
+      </if>
+      <if test="requestParam != null" >
+        #{requestParam,jdbcType=VARCHAR},
+      </if>
+      <if test="requestResult != null" >
+        #{requestResult,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.yyx.aio.entity.OperationLog" >
+    update operation_log
+    <set >
+      <if test="userId != null" >
+        user_id = #{userId,jdbcType=BIGINT},
+      </if>
+      <if test="operTime != null" >
+        oper_time = #{operTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="requestUri != null" >
+        request_uri = #{requestUri,jdbcType=VARCHAR},
+      </if>
+      <if test="requestMillis != null" >
+        request_millis = #{requestMillis,jdbcType=BIGINT},
+      </if>
+      <if test="requestParam != null" >
+        request_param = #{requestParam,jdbcType=VARCHAR},
+      </if>
+      <if test="requestResult != null" >
+        request_result = #{requestResult,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.yyx.aio.entity.OperationLog" >
+    update operation_log
+    set user_id = #{userId,jdbcType=BIGINT},
+      oper_time = #{operTime,jdbcType=TIMESTAMP},
+      request_uri = #{requestUri,jdbcType=VARCHAR},
+      request_millis = #{requestMillis,jdbcType=BIGINT},
+      request_param = #{requestParam,jdbcType=VARCHAR},
+      request_result = #{requestResult,jdbcType=VARCHAR}
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+</mapper>
