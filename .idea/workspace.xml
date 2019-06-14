@@ -2,27 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="844b7442-ba1c-44dc-ab8c-ac6fde3d3b67" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/aiom/src/main/java/com/yyx/aio/common/file/SelectDbfUtil.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/aiom/src/main/java/com/yyx/aio/entity/BillDetail.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/aiom/src/main/java/com/yyx/aio/entity/Business.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/aiom/src/main/java/com/yyx/aio/entity/DiscountDetail.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/aiom/src/main/java/com/yyx/aio/entity/PaytypeDetail.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/aiom/src/main/java/com/yyx/aio/entity/Summary.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/aiom/src/main/resources/readme.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/aiom/src/main/resources/templates/success.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/aiom/src/main/resources/templates/upload.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/springboot_1.5.9_springsecurity.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/springboot_1.5.9_springsecurity.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/aiom/aiom.iml" beforeDir="false" afterPath="$PROJECT_DIR$/aiom/aiom.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/aiom/src/main/java/com/yyx/aio/controller/IndexController.java" beforeDir="false" afterPath="$PROJECT_DIR$/aiom/src/main/java/com/yyx/aio/controller/IndexController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/aiom/src/main/java/com/yyx/aio/service/UserService.java" beforeDir="false" afterPath="$PROJECT_DIR$/aiom/src/main/java/com/yyx/aio/service/UserService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/aiom/src/main/java/com/yyx/aio/service/impl/UserServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/aiom/src/main/java/com/yyx/aio/service/impl/UserServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/aiom/src/main/java/com/yyx/aio/task/job/TaskJob.java" beforeDir="false" afterPath="$PROJECT_DIR$/aiom/src/main/java/com/yyx/aio/task/job/TaskJob.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/aiom/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/aiom/src/main/resources/application.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/aiom/target/classes/META-INF/aiom.kotlin_module" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/aiom/target/classes/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/aiom/target/classes/application.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/aiom/target/classes/com/yyx/aio/controller/IndexController.class" beforeDir="false" afterPath="$PROJECT_DIR$/aiom/target/classes/com/yyx/aio/controller/IndexController.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/aiom/target/classes/com/yyx/aio/service/UserService.class" beforeDir="false" afterPath="$PROJECT_DIR$/aiom/target/classes/com/yyx/aio/service/UserService.class" afterDir="false" />
@@ -46,8 +27,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/aiom/src/main/java/com/yyx/aio/service/impl/UserServiceImpl.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="302">
-              <caret line="525" lean-forward="true" selection-start-line="525" selection-end-line="525" />
+            <state relative-caret-position="366">
+              <caret line="527" lean-forward="true" selection-start-line="527" selection-end-line="527" />
             </state>
           </provider>
         </entry>
@@ -430,6 +411,7 @@
   </component>
   <component name="PropertiesComponent">
     <property name="DefaultHtmlFileTemplate" value="HTML File" />
+    <property name="GO_FMT" value="true" />
     <property name="RequestMappingsPanelOrder0" value="0" />
     <property name="RequestMappingsPanelOrder1" value="1" />
     <property name="RequestMappingsPanelOrder2" value="2" />
@@ -524,12 +506,20 @@
       <option name="presentableId" value="Default" />
       <updated>1560483876268</updated>
       <workItem from="1560483878263" duration="5473000" />
-      <workItem from="1560493964541" duration="14026000" />
+      <workItem from="1560493964541" duration="14121000" />
     </task>
+    <task id="LOCAL-00001" summary="增加实体类">
+      <created>1560510186459</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1560510186459</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="19499000" />
+    <option name="totallyTimeSpent" value="19594000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
@@ -629,6 +619,10 @@
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="1" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="增加实体类" />
+    <option name="LAST_COMMIT_MESSAGE" value="增加实体类" />
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/aiom/src/main/java/com/yyx/aio/config/filter/VerifyTokenFilter.java">
@@ -1170,8 +1164,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/aiom/src/main/java/com/yyx/aio/service/impl/UserServiceImpl.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="302">
-          <caret line="525" lean-forward="true" selection-start-line="525" selection-end-line="525" />
+        <state relative-caret-position="366">
+          <caret line="527" lean-forward="true" selection-start-line="527" selection-end-line="527" />
         </state>
       </provider>
     </entry>
