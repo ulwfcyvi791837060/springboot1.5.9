@@ -98,11 +98,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public boolean uploadAction(String date) {
+    public Result uploadAction(String date, boolean auto) {
+        Result result = new Result();
         logger.info("【job2】开始执行：{}", DateUtil.formatDateTime(new Date()));
-        boolean result =true;
         if(date!=null&&date.trim().length()!=8){
-            return false;
+            result.setSuccess(false);
+            result.setMsg("输入的日期格式不对");
+            return result;
         }
         String y = date.substring(0, 3);
         String m = date.substring(4, 5);
@@ -123,28 +125,101 @@ public class UserServiceImpl implements UserService {
             if(b){
                 //自动上传 表一，只上传一次，最好从【清机后】的数据库中取数据（如果存在这个数据库目录，才上传）
                 //表1是一天传一次完整的，
+                //自动上传，表一是从 【清机后】的数据库中取数据
+                //自动上传 表二到表五 是从 营业中 数据库中取数据
+                logger.info("正在上传==>"+dirFile);
                 boolean b1 = processSummary(st, rs, con, day);
                 if(!b1){
-                    result =b1;
-                    return result;
+                    logger.info("summary上传失败");
+                    result.setSuccess(false);
+                    result.setMsg(result.getMsg()+","+"summary上传失败");
+                    //result =b1;
+                    //return result;
+                }else{
+                    logger.info("summary上传成功");
+                    result.setMsg(result.getMsg()+","+"summary上传成功");
                 }
             }else{
                 logger.info(dirFile+"不存在");
-                result =false;
-                return result;
+                result.setMsg(result.getMsg()+","+dirFile+"不存在");
+                //result =false;
+                //return result;
             }
 
-            /*cont = new SelectDbfUtil(EodDataBaseUrl+"\\"+date);
-            con = cont.getConnection();*/
+            if(auto){
+                dirFile=FBPosDataBaseUrl+"\\"+date;
+                cont = new SelectDbfUtil(dirFile);
+                con = cont.getConnection();
+            }
 
-            //表二到表五 自动上传成功后，要把最后的NUMBER保存到配置文件，不然会漏传和重复上传
             //表2-5是按流水传，3-5分钟传一次即可
-            //手动传都传的清机后的吗?
+            //手动传都传的清机后的吗? 是的
 
-//            processBillDetail(st, rs, con,day);
-//            processBusiness(st, rs, con,day);
-//            processDiscountDetail(st, rs, con,day);
-//            processPaytypeDetail(st, rs, con,day);
+            boolean fBPosDataBaseUrl = dirExists(new File(dirFile));
+
+            if(fBPosDataBaseUrl){
+                //自动上传 表一，只上传一次，最好从【清机后】的数据库中取数据（如果存在这个数据库目录，才上传）
+                //表1是一天传一次完整的，
+                //自动上传，表一是从 【清机后】的数据库中取数据
+                //自动上传 表二到表五 是从 营业中 数据库中取数据
+                logger.info("正在上传==>"+dirFile);
+                boolean b2 = processBusiness(st, rs, con, day,date);
+                if(!b2){
+                    logger.info("Business上传失败");
+                    result.setSuccess(false);
+                    result.setMsg(result.getMsg()+","+"Business上传失败");
+                    //result =b1;
+                    //return result;
+                }else{
+                    logger.info("Business上传成功");
+                    result.setMsg(result.getMsg()+","+"Business上传成功");
+                }
+                logger.info("正在上传==>"+dirFile);
+                boolean b1 = processBillDetail(st, rs, con, day,date);
+                if(!b1){
+                    logger.info("BillDetail上传失败");
+                    result.setSuccess(false);
+                    result.setMsg(result.getMsg()+","+"BillDetail上传失败");
+                    //result =b1;
+                    //return result;
+                }else{
+                    logger.info("BillDetail上传成功");
+                    result.setMsg(result.getMsg()+","+"BillDetail上传成功");
+                }
+                logger.info("正在上传==>"+dirFile);
+                boolean b3 = processPaytypeDetail(st, rs, con, day,date);
+                if(!b3){
+                    logger.info("PaytypeDetail上传失败");
+                    result.setSuccess(false);
+                    result.setMsg(result.getMsg()+","+"PaytypeDetail上传失败");
+                    //result =b1;
+                    //return result;
+                }else{
+                    logger.info("PaytypeDetail上传成功");
+                    result.setMsg(result.getMsg()+","+"PaytypeDetail上传成功");
+                }
+                logger.info("正在上传==>"+dirFile);
+                boolean b4 = processDiscountDetail(st, rs, con, day,date);
+                if(!b4){
+                    logger.info("DiscountDetail上传失败");
+                    result.setSuccess(false);
+                    result.setMsg(result.getMsg()+","+"DiscountDetail上传失败");
+                    //result =b1;
+                    //return result;
+                }else{
+                    logger.info("DiscountDetail上传成功");
+                    result.setMsg(result.getMsg()+","+"DiscountDetail上传成功");
+                }
+
+            }else{
+                logger.info(dirFile+"不存在");
+                result.setMsg(result.getMsg()+","+dirFile+"不存在");
+                //result =false;
+                //return result;
+            }
+
+
+
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -167,6 +242,18 @@ public class UserServiceImpl implements UserService {
         return result;
     }
 
+    /**
+     * 1.Summary 日销售汇总表
+     * @Author zenghuikang
+     * @Description
+     * @Date 2019/6/15 11:07
+      * @param st
+     * @param rs
+     * @param con
+     * @param day
+     * @return boolean
+     * @throws
+     **/
     private boolean processSummary(Statement st, ResultSet rs, Connection con, String day ) {
         String sql = "SELECT  sum(AMOUNT) as net_AMOUNT FROM CTP.dbf where not isnull(AMOUNT) AND (PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES))";
         //logger.info("结果=>" + sql);
@@ -246,13 +333,22 @@ public class UserServiceImpl implements UserService {
         return false;
     }
 
-    private boolean processBusiness(Statement st, ResultSet rs, Connection con,String day ) {
-        String sql = "select a.*,b.net_AMOUNT, b.Settlement_time  from (SELECT NUMBER,sum(Qty*OPRICE) as sale_AMOUNT," +
-                "max(DATE) as Saledate,min(TIME) as Saletime FROM CTI.dbf group by NUMBER) a,(SELECT NUMBER,sum(AMOUNT) " +
-                "as net_AMOUNT,max(TIME) as Settlement_time FROM CTP.dbf where not isnull(AMOUNT) AND PAYBY NOT in " +
-                "(SELECT code FROM PAYMENT.dbf WHERE NOT SALES) group by NUMBER) b where a.NUMBER=b.NUMBER";
+    /**
+     * 2.Business 营业明细表
+     * @Author zenghuikang
+     * @Description
+     * @Date 2019/6/15 11:08
+      * @param st
+     * @param rs
+     * @param con
+     * @param day
+     * @return boolean
+     * @throws
+     **/
+    private boolean processBusiness(Statement st, ResultSet rs, Connection con,String day,String date ) {
+        String sql = "SELECT NUMBER,sum(Qty*OPRICE) as receivable,max(DATE) as Saledate,min(TIME) as start_time FROM CTI.dbf group by NUMBER";
 
-        //logger.info("结果=>" + sql);
+        logger.info("sql=>" + sql);
         try {
             st = con.createStatement();
 
@@ -264,51 +360,68 @@ public class UserServiceImpl implements UserService {
             // 创建Date对象，表示当前时间
             Date now = new Date();
             // 调用format()方法，将日期转换为字符串并输出
-            while (rs.next()) {
+            StringBuilder recordsSb = new StringBuilder();
 
-                String sRealIncome = "net_AMOUNT:" + rs.getString("net_AMOUNT");
-                logger.info(sRealIncome);
+            while (rs.next()) {
+                //start_time ，end_time 只有时间，，你加上日期
+                //优惠金额*=应收金额* -实际收入* receivable-real_income
+                /*表三和表二，SQL是一样的，
+                菜品名称 = 甜品
+                折前单价 = 应收金额*
+                        折后单价 = 实际收入*
+                        数量 = 1
+                        serial = 日期（yyyymmdd）+ NUMBER
+                表四，也用表二的SQL ,
+                        支付方式 = 现金
+                支付金额 = 实际收入
+                表五，也用表二的SQL
+                优惠类型 统一写 【优惠折扣】
+                优惠金额* = 应收金额*- 实际收入*
+                自动上传，允许重复上传，，SQL可不用加条件，表二到表五每次可上传多条记录，，全部上传吧*/
+
+                //NUMBER,receivable,Saledate,start_time,real_income,end_time
+                String NUMBER = rs.getString("NUMBER");
+                String receivable = rs.getString("receivable");
+                String Saledate = rs.getString("Saledate");
+                String start_time = rs.getString("start_time");
+
+                sql="SELECT NUMBER,sum(AMOUNT) as real_income,max(TIME) as end_time FROM CTP.dbf where not isnull(AMOUNT) and " +
+                        "NUMBER ="+NUMBER+" AND PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES) group by NUMBER \n";
+                st = con.createStatement();
+
+                rs = st.executeQuery(sql);
+                String real_income="";
+                String end_time="";
+                while (rs.next()) {
+                    real_income = rs.getString("real_income");
+                    end_time = rs.getString("end_time");
+                }
+
+
 
                 business.setLocation_id("");
                 business.setStore_id("");
                 business.setStore_name("");
-                business.setB_date("");
-                business.setSerial("");
-                business.setStart_time("");
-                business.setEnd_time("");
-                business.setReceivable(0.0D);
-                business.setReal_income(0.0D);
+                business.setB_date(Saledate);
+                business.setSerial(date+NUMBER);
+                business.setStart_time(Saledate+" "+start_time);
+                business.setEnd_time(Saledate+" "+end_time);
+                business.setReceivable(Double.parseDouble(receivable));
+                business.setReal_income(Double.parseDouble(real_income));
                 business.setDiscount_amount(0.0D);
                 business.setIs_chargeback("");
                 business.setChargeback(0.0D);
                 business.setTime(sdf3.format(now));
                 business.setRefresh_time(sdf3.format(now));
 
-                String param="";
-                param = "{\n" +
-                        "    \"columnNames\": [\n" +
-                        "        \"location_id\",\n" +
-                        "        \"store_id\",\n" +
-                        "        \"store_name\",\n" +
-                        "        \"b_date\",\n" +
-                        "        \"serial\",\n" +
-                        "        \"start_time\",\n" +
-                        "        \"end_time\",\n" +
-                        "        \"receivable\",\n" +
-                        "        \"real_income\",\n" +
-                        "        \"discount_amount\",\n" +
-                        "        \"is_chargeback\",\n" +
-                        "        \"chargeback\",\n" +
-                        "        \"time\",\n" +
-                        "        \"refresh_time\"\n" +
-                        "    ],\n" +
-                        "    \"keyCol\": \"store_id,serial\",\n" +
-                        "    \"records\": [\n" +
-                        "        [\n" +
+                if(recordsSb.length()>0){
+                    recordsSb.append(",");
+                }
+                recordsSb.append("        [\n" +
                         "            \""+locationId+"\",\n" +
                         "            \""+storeId+"\",\n" +
                         "            \""+storeName+"\",\n" +
-                        "            \""+day+" 00:00:00\",\n" +
+                        "            \""+business.getB_date()+" 00:00:00\",\n" +
                         "            \""+business.getSerial()+"\",\n" +
                         "            \""+business.getStart_time()+"\",\n" +
                         "            \""+business.getEnd_time()+"\",\n" +
@@ -319,13 +432,34 @@ public class UserServiceImpl implements UserService {
                         "            \""+business.getChargeback()+"\",\n" +
                         "            \""+business.getTime()+"\",\n" +
                         "            \""+business.getRefresh_time()+"\",\n" +
-                        "        ]\n" +
-                        "    ],\n" +
-                        "    \"tableName\": \"Business\"\n" +
-                        "}";
-                return apiDataStr(param);
-            }
+                        "        ]\n" );
 
+            }
+            String param = "{\n" +
+                    "    \"columnNames\": [\n" +
+                    "        \"location_id\",\n" +
+                    "        \"store_id\",\n" +
+                    "        \"store_name\",\n" +
+                    "        \"b_date\",\n" +
+                    "        \"serial\",\n" +
+                    "        \"start_time\",\n" +
+                    "        \"end_time\",\n" +
+                    "        \"receivable\",\n" +
+                    "        \"real_income\",\n" +
+                    "        \"discount_amount\",\n" +
+                    "        \"is_chargeback\",\n" +
+                    "        \"chargeback\",\n" +
+                    "        \"time\",\n" +
+                    "        \"refresh_time\"\n" +
+                    "    ],\n" +
+                    "    \"keyCol\": \"store_id,serial\",\n" +
+                    "    \"records\": [\n"
+                    +recordsSb.toString()+
+                    "    ],\n" +
+                    "    \"tableName\": \"Business\"\n" +
+                    "}";
+
+            return apiDataStr(param);
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -333,9 +467,21 @@ public class UserServiceImpl implements UserService {
         return false;
     }
 
-    private boolean processBillDetail(Statement st, ResultSet rs, Connection con,String day ) {
-        String sql = "SELECT  sum(AMOUNT) as net_AMOUNT FROM CTP.dbf where not isnull(AMOUNT) AND (PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES))";
-        //logger.info("结果=>" + sql);
+    /**
+     * 3.Bill Detail  账单销售明细表
+     * @Author zenghuikang
+     * @Description
+     * @Date 2019/6/15 11:08
+      * @param st
+     * @param rs
+     * @param con
+     * @param day
+     * @return boolean
+     * @throws
+     **/
+    private boolean processBillDetail(Statement st, ResultSet rs, Connection con,String day, String date ) {
+        String sql = "SELECT NUMBER,sum(Qty*OPRICE) as receivable,max(DATE) as Saledate,min(TIME) as start_time FROM CTI.dbf group by NUMBER";
+        logger.info("sql=>" + sql);
         try {
             st = con.createStatement();
 
@@ -347,25 +493,49 @@ public class UserServiceImpl implements UserService {
             // 创建Date对象，表示当前时间
             Date now = new Date();
             // 调用format()方法，将日期转换为字符串并输出
+            StringBuilder recordsSb = new StringBuilder();
             while (rs.next()) {
 
-                String sRealIncome = "net_AMOUNT:" + rs.getString("net_AMOUNT");
-                logger.info(sRealIncome);
+                //NUMBER,receivable,Saledate,start_time,real_income,end_time
+                String NUMBER = rs.getString("NUMBER");
+                String receivable = rs.getString("receivable");
+                String Saledate = rs.getString("Saledate");
+                String start_time = rs.getString("start_time");
+
+                /*表三和表二，SQL是一样的，
+                菜品名称 = 甜品
+                折前单价 = 应收金额*
+                        折后单价 = 实际收入*
+                        数量 = 1
+                        serial = 日期（yyyymmdd）+ NUMBER*/
+
+                sql="SELECT NUMBER,sum(AMOUNT) as real_income,max(TIME) as end_time FROM CTP.dbf where not isnull(AMOUNT) and " +
+                        "NUMBER ="+NUMBER+" AND PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES) group by NUMBER \n";
+                st = con.createStatement();
+
+                rs = st.executeQuery(sql);
+                String real_income="";
+                String end_time="";
+                while (rs.next()) {
+                    real_income = rs.getString("real_income");
+                    end_time = rs.getString("end_time");
+                }
 
                 billDetail.setLocation_id("");
                 billDetail.setStore_id("");
                 billDetail.setStore_name("");
-                billDetail.setB_date("");
-                billDetail.setSerial("");
-                billDetail.setStart_time("");
-                billDetail.setEnd_time("");
-                billDetail.setItem_name("");
+                billDetail.setB_date(Saledate);
+                billDetail.setSerial(date+NUMBER);
+                billDetail.setStart_time(Saledate+" "+start_time);
+                billDetail.setEnd_time(Saledate+" "+end_time);
+                billDetail.setItem_name("甜品");
                 billDetail.setItem_category("");
                 billDetail.setItem_sub_category("");
-                billDetail.setOriginal_price(0.0D);
-                billDetail.setActual_price(0.0D);
-                billDetail.setItem_num(0.0D);
-                billDetail.setReceivable(0.0D);
+                //折前单价 = receivable
+                billDetail.setOriginal_price(Double.parseDouble(receivable));
+                billDetail.setActual_price(Double.parseDouble(real_income));
+                billDetail.setItem_num(1D);
+                billDetail.setReceivable(Double.parseDouble(receivable));
                 billDetail.setReal_income(0.0D);
                 billDetail.setDisc_money(0.0D);
                 billDetail.setIs_chargeback("");
@@ -404,7 +574,7 @@ public class UserServiceImpl implements UserService {
                         "            \""+locationId+"\",\n" +
                         "            \""+storeId+"\",\n" +
                         "            \""+storeName+"\",\n" +
-                        "            \""+day+" 00:00:00\",\n" +
+                        "            \""+billDetail.getB_date()+" 00:00:00\",\n" +
                         "            \""+billDetail.getStart_time()+"\",\n" +
                         "            \""+billDetail.getEnd_time()+"\",\n" +
                         "            \""+billDetail.getItem_name()+"\",\n" +
@@ -435,83 +605,21 @@ public class UserServiceImpl implements UserService {
         return false;
     }
 
-    private boolean processDiscountDetail(Statement st, ResultSet rs, Connection con,String day ) {
-        String sql = "SELECT  sum(AMOUNT) as net_AMOUNT FROM CTP.dbf where not isnull(AMOUNT) AND (PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES))";
-        //logger.info("结果=>" + sql);
-        try {
-            st = con.createStatement();
-
-            rs = st.executeQuery(sql);
-
-            DiscountDetail discountDetail = new DiscountDetail();
-
-            SimpleDateFormat sdf3 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            // 创建Date对象，表示当前时间
-            Date now = new Date();
-            // 调用format()方法，将日期转换为字符串并输出
-            while (rs.next()) {
-
-                String sRealIncome = "net_AMOUNT:" + rs.getString("net_AMOUNT");
-                logger.info(sRealIncome);
-
-                discountDetail.setLocation_id("");
-                discountDetail.setStore_id("");
-                discountDetail.setStore_name("");
-                discountDetail.setB_date("");
-                discountDetail.setSerial("");
-                discountDetail.setStart_time("");
-                discountDetail.setEnd_time("");
-                discountDetail.setDiscount_type("");
-                discountDetail.setDiscount_amount(0.0D);
-                discountDetail.setTime(sdf3.format(now));
-                discountDetail.setRefresh_time(sdf3.format(now));
-
-                String param="";
-                param = "{\n" +
-                        "    \"columnNames\": [\n" +
-                        "        \"location_id\",\n" +
-                        "        \"store_id\",\n" +
-                        "        \"store_name\",\n" +
-                        "        \"b_date\",\n" +
-                        "        \"serial\",\n" +
-                        "        \"start_time\",\n" +
-                        "        \"end_time\",\n" +
-                        "        \"discount_type\",\n" +
-                        "        \"discount_amount\",\n" +
-                        "        \"time\",\n" +
-                        "        \"refresh_time\",\n" +
-                        "    ],\n" +
-                        "    \"keyCol\": \"store_id,serial,discount_type\",\n" +
-                        "    \"records\": [\n" +
-                        "        [\n" +
-                        "            \""+locationId+"\",\n" +
-                        "            \""+storeId+"\",\n" +
-                        "            \""+storeName+"\",\n" +
-                        "            \""+day+" 00:00:00\",\n" +
-                        "            \""+discountDetail.getSerial()+"\",\n" +
-                        "            \""+discountDetail.getStart_time()+"\",\n" +
-                        "            \""+discountDetail.getEnd_time()+"\",\n" +
-                        "            \""+discountDetail.getDiscount_type()+"\",\n" +
-                        "            \""+discountDetail.getDiscount_amount()+"\",\n" +
-                        "            \""+discountDetail.getTime()+"\",\n" +
-                        "            \""+discountDetail.getRefresh_time()+"\",\n" +
-                        "        ]\n" +
-                        "    ],\n" +
-                        "    \"tableName\": \"Discount Detail\"\n" +
-                        "}";
-                return apiDataStr(param);
-            }
-
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    private boolean processPaytypeDetail(Statement st, ResultSet rs, Connection con,String day ) {
-        String sql = "SELECT  sum(AMOUNT) as net_AMOUNT FROM CTP.dbf where not isnull(AMOUNT) AND (PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES))";
-        //logger.info("结果=>" + sql);
+    /**
+     * 4.Paytype Detail 支付方式明细表
+     * @Author zenghuikang
+     * @Description
+     * @Date 2019/6/15 11:09
+      * @param st
+     * @param rs
+     * @param con
+     * @param day
+     * @return boolean
+     * @throws
+     **/
+    private boolean processPaytypeDetail(Statement st, ResultSet rs, Connection con,String day,String date ) {
+        String sql = "SELECT NUMBER,sum(Qty*OPRICE) as receivable,max(DATE) as Saledate,min(TIME) as start_time FROM CTI.dbf group by NUMBER";
+        logger.info("sql=>" + sql);
         try {
             st = con.createStatement();
 
@@ -524,20 +632,40 @@ public class UserServiceImpl implements UserService {
             // 创建Date对象，表示当前时间
             Date now = new Date();
             // 调用format()方法，将日期转换为字符串并输出
+            StringBuilder recordsSb = new StringBuilder();
             while (rs.next()) {
 
-                String sRealIncome = "net_AMOUNT:" + rs.getString("net_AMOUNT");
-                logger.info(sRealIncome);
+                //NUMBER,receivable,Saledate,start_time,real_income,end_time
+                String NUMBER = rs.getString("NUMBER");
+                String receivable = rs.getString("receivable");
+                String Saledate = rs.getString("Saledate");
+                String start_time = rs.getString("start_time");
+
+                /*表四，也用表二的SQL ,
+                        支付方式 = 现金
+                支付金额 = 实际收入*/
+
+                sql="SELECT NUMBER,sum(AMOUNT) as real_income,max(TIME) as end_time FROM CTP.dbf where not isnull(AMOUNT) and " +
+                        "NUMBER ="+NUMBER+" AND PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES) group by NUMBER \n";
+                st = con.createStatement();
+
+                rs = st.executeQuery(sql);
+                String real_income="";
+                String end_time="";
+                while (rs.next()) {
+                    real_income = rs.getString("real_income");
+                    end_time = rs.getString("end_time");
+                }
 
                 paytypeDetail.setLocation_id("");
                 paytypeDetail.setStore_id("");
                 paytypeDetail.setStore_name("");
-                paytypeDetail.setB_date("");
-                paytypeDetail.setSerial("");
-                paytypeDetail.setStart_time("");
-                paytypeDetail.setEnd_time("");
-                paytypeDetail.setPaytype("");
-                paytypeDetail.setPaytype_income(0.0D);
+                paytypeDetail.setB_date(Saledate);
+                paytypeDetail.setSerial(date+NUMBER);
+                paytypeDetail.setStart_time(Saledate+" "+start_time);
+                paytypeDetail.setEnd_time(Saledate+" "+end_time);
+                paytypeDetail.setPaytype("现金");
+                paytypeDetail.setPaytype_income(Double.parseDouble(real_income));
                 paytypeDetail.setTime(sdf3.format(now));
                 paytypeDetail.setRefresh_time(sdf3.format(now));
 
@@ -562,7 +690,7 @@ public class UserServiceImpl implements UserService {
                         "            \""+locationId+"\",\n" +
                         "            \""+storeId+"\",\n" +
                         "            \""+storeName+"\",\n" +
-                        "            \""+day+" 00:00:00\",\n" +
+                        "            \""+paytypeDetail.getB_date()+" 00:00:00\",\n" +
                         "            \""+paytypeDetail.getSerial()+"\",\n" +
                         "            \""+paytypeDetail.getStart_time()+"\",\n" +
                         "            \""+paytypeDetail.getEnd_time()+"\",\n" +
@@ -573,6 +701,113 @@ public class UserServiceImpl implements UserService {
                         "        ]\n" +
                         "    ],\n" +
                         "    \"tableName\": \"Paytype Detail\"\n" +
+                        "}";
+                return apiDataStr(param);
+            }
+
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+
+    /**
+     * 5.Discount Detail 优惠金额明细表
+     * @Author zenghuikang
+     * @Description
+     * @Date 2019/6/15 11:09
+     * @param st
+     * @param rs
+     * @param con
+     * @param day
+     * @return boolean
+     * @throws
+     **/
+    private boolean processDiscountDetail(Statement st, ResultSet rs, Connection con,String day ,String date ) {
+        String sql = "SELECT NUMBER,sum(Qty*OPRICE) as receivable,max(DATE) as Saledate,min(TIME) as start_time FROM CTI.dbf group by NUMBER";
+        logger.info("sql=>" + sql);
+        try {
+            st = con.createStatement();
+
+            rs = st.executeQuery(sql);
+
+            DiscountDetail discountDetail = new DiscountDetail();
+
+            SimpleDateFormat sdf3 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            // 创建Date对象，表示当前时间
+            Date now = new Date();
+            // 调用format()方法，将日期转换为字符串并输出
+            StringBuilder recordsSb = new StringBuilder();
+            while (rs.next()) {
+
+                //NUMBER,receivable,Saledate,start_time,real_income,end_time
+                String NUMBER = rs.getString("NUMBER");
+                String receivable = rs.getString("receivable");
+                String Saledate = rs.getString("Saledate");
+                String start_time = rs.getString("start_time");
+
+                sql="SELECT NUMBER,sum(AMOUNT) as real_income,max(TIME) as end_time FROM CTP.dbf where not isnull(AMOUNT) and " +
+                        "NUMBER ="+NUMBER+" AND PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES) group by NUMBER \n";
+                st = con.createStatement();
+
+                rs = st.executeQuery(sql);
+                String real_income="";
+                String end_time="";
+                while (rs.next()) {
+                    real_income = rs.getString("real_income");
+                    end_time = rs.getString("end_time");
+                }
+
+                /*表五，也用表二的SQL
+                优惠类型 统一写 【优惠折扣】
+                优惠金额* = 应收金额*- 实际收入*
+                自动上传，允许重复上传，，SQL可不用加条件，表二到表五每次可上传多条记录，，全部上传吧*/
+                discountDetail.setLocation_id("");
+                discountDetail.setStore_id("");
+                discountDetail.setStore_name("");
+                discountDetail.setB_date(Saledate);
+                discountDetail.setSerial(date+NUMBER);
+                discountDetail.setStart_time(Saledate+" "+start_time);
+                discountDetail.setEnd_time(Saledate+" "+end_time);
+                discountDetail.setDiscount_type("优惠折扣");
+                discountDetail.setDiscount_amount(Double.parseDouble(receivable)-Double.parseDouble(real_income));
+                discountDetail.setTime(sdf3.format(now));
+                discountDetail.setRefresh_time(sdf3.format(now));
+
+                String param="";
+                param = "{\n" +
+                        "    \"columnNames\": [\n" +
+                        "        \"location_id\",\n" +
+                        "        \"store_id\",\n" +
+                        "        \"store_name\",\n" +
+                        "        \"b_date\",\n" +
+                        "        \"serial\",\n" +
+                        "        \"start_time\",\n" +
+                        "        \"end_time\",\n" +
+                        "        \"discount_type\",\n" +
+                        "        \"discount_amount\",\n" +
+                        "        \"time\",\n" +
+                        "        \"refresh_time\",\n" +
+                        "    ],\n" +
+                        "    \"keyCol\": \"store_id,serial,discount_type\",\n" +
+                        "    \"records\": [\n" +
+                        "        [\n" +
+                        "            \""+locationId+"\",\n" +
+                        "            \""+storeId+"\",\n" +
+                        "            \""+storeName+"\",\n" +
+                        "            \""+discountDetail.getB_date()+" 00:00:00\",\n" +
+                        "            \""+discountDetail.getSerial()+"\",\n" +
+                        "            \""+discountDetail.getStart_time()+"\",\n" +
+                        "            \""+discountDetail.getEnd_time()+"\",\n" +
+                        "            \""+discountDetail.getDiscount_type()+"\",\n" +
+                        "            \""+discountDetail.getDiscount_amount()+"\",\n" +
+                        "            \""+discountDetail.getTime()+"\",\n" +
+                        "            \""+discountDetail.getRefresh_time()+"\",\n" +
+                        "        ]\n" +
+                        "    ],\n" +
+                        "    \"tableName\": \"Discount Detail\"\n" +
                         "}";
                 return apiDataStr(param);
             }

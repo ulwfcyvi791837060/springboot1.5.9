@@ -1,6 +1,7 @@
 package com.yyx.aio.controller;
 
 import com.yyx.aio.common.file.SelectDbfUtil;
+import com.yyx.aio.entity.Result;
 import com.yyx.aio.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -52,13 +53,9 @@ public class IndexController {
 
     @PostMapping(value = "/upload_action")
     public String uploadAction(Model model,@RequestParam("date") String date, RedirectAttributes redirectAttributes) {
-        boolean b = userServiceimpl.uploadAction(date);
-        model.addAttribute("name", "上传数据失败");
-        redirectAttributes.addFlashAttribute("name", "上传数据失败");
-        if(b){
-            model.addAttribute("name", "上传数据成功");
-            redirectAttributes.addFlashAttribute("name", "上传数据成功");
-        }
+        Result result = userServiceimpl.uploadAction(date, false);
+        model.addAttribute("name", result.getMsg());
+        redirectAttributes.addFlashAttribute("name", result.getMsg());
         return "redirect:/upload";
     }
 }

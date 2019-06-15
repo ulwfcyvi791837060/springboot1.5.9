@@ -31,14 +31,17 @@ public class SelectDbfUtil {
         ResultSet rs = null;
         Connection con =null;
 
-        System.out.println("输出：");
         SelectDbfUtil cont = null;
         try {
-            cont = new SelectDbfUtil("C:\\Users\\Administrator\\Desktop\\EOD\\20180208");
+            cont = new SelectDbfUtil("C:\\PointSoft\\EOD\\20180208");
             con = cont.getConnection();
 
-            String sql = "SELECT  sum(Qty*OPRICE) as sale_AMOUNT FROM CTI.dbf";
-            //System.err.print("结果=>" + sql);
+            String sql = "select a.*,b.real_income, b.end_time  from (SELECT NUMBER,sum(Qty*OPRICE) as receivable,max([DATE]) as Saledate,min([TIME]) as start_time FROM CTI.dbf group by NUMBER) a inner join (SELECT NUMBER,sum(AMOUNT) as real_income,max([TIME]) as end_time FROM CTP.dbf where not isnull(AMOUNT) AND PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES) group by NUMBER) b on a.NUMBER=b.NUMBER";
+            sql = "SELECT [number] as serial,sum(Qty*OPRICE) as receivable,max([date]) as Saledate,min([time]) as start_time FROM CTI.dbf group by number";
+            /*sql = "select a.*,b.real_income, b.end_time  from (SELECT NUMBER,sum(Qty*OPRICE) as receivable,max([DATE]) as Saledate,min([TIME]) as " +
+                    "start_time FROM CTI.dbf group by NUMBER) a inner join (SELECT NUMBER,sum(AMOUNT) as real_income,max([TIME]) as end_time " +
+                    "FROM CTP.dbf where not isnull(AMOUNT) AND PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES) group by NUMBER) b on a.NUMBER=b.NUMBER ";*/
+        System.err.print("sql=>" + sql);
             st = con.createStatement();
             rs = st.executeQuery(sql);
             while (rs.next()) {
