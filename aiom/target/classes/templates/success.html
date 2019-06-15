@@ -6,6 +6,15 @@
 </head>
 <body>
 <!--/*@thymesVar id="name" type="java.lang.String"*/-->
+<div class="panel-body">
+    <form class="form-inline" role="form" method="post" action="/aiom/upload_action">
+        <input type="hidden" name="pid" value="{{pid}}">
+        <div class="form-group">
+            <input type="text" name="date" class="form-control" required placeholder="日期 格式:20180208 ">
+        </div>
+        <button type="submit" class="btn btn-default">上传</button>
+    </form>
+</div>
 <p th:text="'Hello！, ' + ${name} + '!'" >3333</p>
 </body>
 </html>

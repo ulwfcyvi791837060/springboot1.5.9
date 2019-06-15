@@ -3,6 +3,8 @@ package com.yyx.aio.task.job;
 import cn.hutool.core.date.DateUtil;
 import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -28,9 +30,9 @@ import java.util.Map;
  * @modified: yangkai.shen
  */
 @Component
-@Slf4j
+//@Slf4j
 public class TaskJob {
-    //private Logger log = LoggerFactory.getLogger(getClass());
+    private Logger log = LoggerFactory.getLogger(getClass());
 
 /*1.Summary 日销售汇总表
 2.Business 营业明细表
@@ -44,27 +46,26 @@ public class TaskJob {
     /**
      * 按照标准时间来算，每隔 10s 执行一次
      */
-    //@Scheduled(cron = "0/10 * * * * ?")
+    /*@Scheduled(cron = "0/10 * * * * ?")
     public void job1() {
         log.info("【job1】开始执行：{}", DateUtil.formatDateTime(new Date()));
-    }
+    }*/
 
     /**
      * 从启动时间开始，间隔 2s 执行
      * 固定间隔时间
      */
-    @Scheduled(fixedRate = 20000000)
+    /*@Scheduled(fixedRate = 20000000)
     public void job2() {
-
-
-    }
+        log.info("【job22】开始执行：{}", DateUtil.formatDateTime(new Date()));
+    }*/
 
     /**
      * 从启动时间开始，延迟 5s 后间隔 4s 执行
      * 固定等待时间
      */
-    //@Scheduled(fixedDelay = 4000, initialDelay = 5000)
+    /*@Scheduled(fixedDelay = 4000, initialDelay = 5000)
     public void job3() {
         log.info("【job3】开始执行：{}", DateUtil.formatDateTime(new Date()));
-    }
+    }*/
 }

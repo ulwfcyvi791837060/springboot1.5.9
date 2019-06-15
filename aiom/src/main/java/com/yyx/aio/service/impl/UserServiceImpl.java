@@ -6,16 +6,24 @@ import com.yyx.aio.common.file.SelectDbfUtil;
 import com.yyx.aio.entity.*;
 import com.yyx.aio.mapper.UserMapper;
 import com.yyx.aio.service.UserService;
+import com.yyx.aio.task.util.DESUtil;
+import com.yyx.aio.task.util.RSAUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -24,6 +32,9 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * 方法
@@ -50,6 +61,28 @@ public class UserServiceImpl implements UserService {
     @Value("${dbf.store.store_name}")
     private String storeName;
 
+    @Value("${dbf.store.urlStr}")
+    private String urlStr;
+
+    @Value("${dbf.store.url}")
+    private String url;
+
+    @Value("${dbf.store.desKey}")
+    private String desKey ;
+
+    @Value("${dbf.store.publicKeyStr}")
+    private String publicKeyStr;
+
+    @Value("${dbf.store.corporationCode}")
+    private String corporationCode;
+
+    @Value("${dbf.store.FBPosDataBaseUrl}")
+    private String FBPosDataBaseUrl;
+
+    @Value("${dbf.store.EodDataBaseUrl}")
+    private String EodDataBaseUrl;
+
+
 
     @Override
     public User getByLoginName(String loginName) {
@@ -67,6 +100,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public boolean uploadAction(String date) {
         logger.info("【job2】开始执行：{}", DateUtil.formatDateTime(new Date()));
+        boolean result =true;
         if(date!=null&&date.trim().length()!=8){
             return false;
         }
@@ -77,14 +111,40 @@ public class UserServiceImpl implements UserService {
         Statement st = null;
         ResultSet rs = null;
         Connection con =null;
-
-        System.out.println("输出：");
+        String dirFile=EodDataBaseUrl+"\\"+date;
+        logger.info("输出：");
         SelectDbfUtil cont = null;
         try {
-            cont = new SelectDbfUtil();
+            cont = new SelectDbfUtil(dirFile);
             con = cont.getConnection();
 
-            processSummary(st, rs, con,day);
+            boolean b = dirExists(new File(dirFile));
+
+            if(b){
+                //自动上传 表一，只上传一次，最好从【清机后】的数据库中取数据（如果存在这个数据库目录，才上传）
+                //表1是一天传一次完整的，
+                boolean b1 = processSummary(st, rs, con, day);
+                if(!b1){
+                    result =b1;
+                    return result;
+                }
+            }else{
+                logger.info(dirFile+"不存在");
+                result =false;
+                return result;
+            }
+
+            /*cont = new SelectDbfUtil(EodDataBaseUrl+"\\"+date);
+            con = cont.getConnection();*/
+
+            //表二到表五 自动上传成功后，要把最后的NUMBER保存到配置文件，不然会漏传和重复上传
+            //表2-5是按流水传，3-5分钟传一次即可
+            //手动传都传的清机后的吗?
+
+//            processBillDetail(st, rs, con,day);
+//            processBusiness(st, rs, con,day);
+//            processDiscountDetail(st, rs, con,day);
+//            processPaytypeDetail(st, rs, con,day);
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -104,12 +164,12 @@ public class UserServiceImpl implements UserService {
             e.printStackTrace();
         }
 
-        return true;
+        return result;
     }
 
-    private void processSummary(Statement st, ResultSet rs, Connection con,String day ) {
+    private boolean processSummary(Statement st, ResultSet rs, Connection con, String day ) {
         String sql = "SELECT  sum(AMOUNT) as net_AMOUNT FROM CTP.dbf where not isnull(AMOUNT) AND (PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES))";
-        //System.err.print("结果=>" + sql);
+        //logger.info("结果=>" + sql);
         try {
             st = con.createStatement();
 
@@ -122,8 +182,8 @@ public class UserServiceImpl implements UserService {
             // 调用format()方法，将日期转换为字符串并输出
             while (rs.next()) {
 
-                String sRealIncome = "net_AMOUNT:" + rs.getString("net_AMOUNT");
-                System.out.println(sRealIncome);
+                String sRealIncome = rs.getString("net_AMOUNT");
+                logger.info("net_AMOUNT:" + sRealIncome);
 
                 summary.setLocationId("");
                 summary.setStoreId("");
@@ -176,18 +236,23 @@ public class UserServiceImpl implements UserService {
                         "    ],\n" +
                         "    \"tableName\": \"Summary\"\n" +
                         "}";
-                apiDataStr(param);
+                return apiDataStr(param);
             }
 
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        return false;
     }
 
-    private void processBusiness(Statement st, ResultSet rs, Connection con,String day ) {
-        String sql = "SELECT  sum(AMOUNT) as net_AMOUNT FROM CTP.dbf where not isnull(AMOUNT) AND (PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES))";
-        //System.err.print("结果=>" + sql);
+    private boolean processBusiness(Statement st, ResultSet rs, Connection con,String day ) {
+        String sql = "select a.*,b.net_AMOUNT, b.Settlement_time  from (SELECT NUMBER,sum(Qty*OPRICE) as sale_AMOUNT," +
+                "max(DATE) as Saledate,min(TIME) as Saletime FROM CTI.dbf group by NUMBER) a,(SELECT NUMBER,sum(AMOUNT) " +
+                "as net_AMOUNT,max(TIME) as Settlement_time FROM CTP.dbf where not isnull(AMOUNT) AND PAYBY NOT in " +
+                "(SELECT code FROM PAYMENT.dbf WHERE NOT SALES) group by NUMBER) b where a.NUMBER=b.NUMBER";
+
+        //logger.info("结果=>" + sql);
         try {
             st = con.createStatement();
 
@@ -202,7 +267,7 @@ public class UserServiceImpl implements UserService {
             while (rs.next()) {
 
                 String sRealIncome = "net_AMOUNT:" + rs.getString("net_AMOUNT");
-                System.out.println(sRealIncome);
+                logger.info(sRealIncome);
 
                 business.setLocation_id("");
                 business.setStore_id("");
@@ -258,18 +323,19 @@ public class UserServiceImpl implements UserService {
                         "    ],\n" +
                         "    \"tableName\": \"Business\"\n" +
                         "}";
-                apiDataStr(param);
+                return apiDataStr(param);
             }
 
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        return false;
     }
 
-    private void processBillDetail(Statement st, ResultSet rs, Connection con,String day ) {
+    private boolean processBillDetail(Statement st, ResultSet rs, Connection con,String day ) {
         String sql = "SELECT  sum(AMOUNT) as net_AMOUNT FROM CTP.dbf where not isnull(AMOUNT) AND (PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES))";
-        //System.err.print("结果=>" + sql);
+        //logger.info("结果=>" + sql);
         try {
             st = con.createStatement();
 
@@ -284,7 +350,7 @@ public class UserServiceImpl implements UserService {
             while (rs.next()) {
 
                 String sRealIncome = "net_AMOUNT:" + rs.getString("net_AMOUNT");
-                System.out.println(sRealIncome);
+                logger.info(sRealIncome);
 
                 billDetail.setLocation_id("");
                 billDetail.setStore_id("");
@@ -359,18 +425,19 @@ public class UserServiceImpl implements UserService {
                         "    ],\n" +
                         "    \"tableName\": \"Bill Detail\"\n" +
                         "}";
-                apiDataStr(param);
+                return apiDataStr(param);
             }
 
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        return false;
     }
 
-    private void processDiscountDetail(Statement st, ResultSet rs, Connection con,String day ) {
+    private boolean processDiscountDetail(Statement st, ResultSet rs, Connection con,String day ) {
         String sql = "SELECT  sum(AMOUNT) as net_AMOUNT FROM CTP.dbf where not isnull(AMOUNT) AND (PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES))";
-        //System.err.print("结果=>" + sql);
+        //logger.info("结果=>" + sql);
         try {
             st = con.createStatement();
 
@@ -385,7 +452,7 @@ public class UserServiceImpl implements UserService {
             while (rs.next()) {
 
                 String sRealIncome = "net_AMOUNT:" + rs.getString("net_AMOUNT");
-                System.out.println(sRealIncome);
+                logger.info(sRealIncome);
 
                 discountDetail.setLocation_id("");
                 discountDetail.setStore_id("");
@@ -432,18 +499,19 @@ public class UserServiceImpl implements UserService {
                         "    ],\n" +
                         "    \"tableName\": \"Discount Detail\"\n" +
                         "}";
-                apiDataStr(param);
+                return apiDataStr(param);
             }
 
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        return false;
     }
 
-    private void processPaytypeDetail(Statement st, ResultSet rs, Connection con,String day ) {
+    private boolean processPaytypeDetail(Statement st, ResultSet rs, Connection con,String day ) {
         String sql = "SELECT  sum(AMOUNT) as net_AMOUNT FROM CTP.dbf where not isnull(AMOUNT) AND (PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES))";
-        //System.err.print("结果=>" + sql);
+        //logger.info("结果=>" + sql);
         try {
             st = con.createStatement();
 
@@ -459,7 +527,7 @@ public class UserServiceImpl implements UserService {
             while (rs.next()) {
 
                 String sRealIncome = "net_AMOUNT:" + rs.getString("net_AMOUNT");
-                System.out.println(sRealIncome);
+                logger.info(sRealIncome);
 
                 paytypeDetail.setLocation_id("");
                 paytypeDetail.setStore_id("");
@@ -506,24 +574,27 @@ public class UserServiceImpl implements UserService {
                         "    ],\n" +
                         "    \"tableName\": \"Paytype Detail\"\n" +
                         "}";
-                apiDataStr(param);
+                return apiDataStr(param);
             }
 
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        return false;
     }
 
-    public void apiDataStr(String param){
+    public boolean apiDataStr(String param){
+        if(true){
+            return apiData(param);
+        }
         //String url = "/api/data/str";
         //测试环境：https://lb-test.tcsl.com.cn:8079/bi_proxy/
         //String url = "https://lb-test.tcsl.com.cn:8079/bi_proxy//api/data/str";
+        logger.info("apiDataStr(String param)=>",param);
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-
-
 
         Map<String, String> map = new HashMap<String, String>();
         //企业秘钥DES加密转base64
@@ -531,12 +602,94 @@ public class UserServiceImpl implements UserService {
         try {
             //RSA公钥加密转base64
             map.put("corporationCode",com.yyx.aio.task.util.RSAUtil.encrypt(
-                    com.yyx.aio.task.util.RSAUtil.loadPublicKey(publicKeyStr),"000062".getBytes()));
+                    com.yyx.aio.task.util.RSAUtil.loadPublicKey(publicKeyStr),corporationCode.getBytes()));
         } catch (Exception e) {
             e.printStackTrace();
         }
         HttpEntity<String> httpEntity = new HttpEntity<>(JSON.toJSONString(map), headers);
-        String result = restTemplate.postForObject(url, httpEntity, String.class);
-        logger.info("结果=>" + result);
+        String result = restTemplate.postForObject(urlStr, httpEntity, String.class);
+
+        Result result1 = JSON.parseObject(result, Result.class);
+
+        logger.info("apiDataStr结果=>" + result);
+        logger.info("apiDataStr结果=>" + result1.isSuccess());
+        return result1.isSuccess();
+    }
+
+
+    public boolean apiData(String str){
+        File file = null;
+        try {
+            file = File.createTempFile(String.valueOf(UUID.randomUUID()), ".zip");
+            ZipOutputStream zos =  new ZipOutputStream(new FileOutputStream(file));
+            //加密后压缩
+            createZip(zos, DESUtil.encrypt(str,desKey));
+            zos.closeEntry();
+            zos.close();
+
+            RestTemplate rest = new RestTemplate();
+            FileSystemResource resource = new FileSystemResource(file);
+            MultiValueMap<String, Object> param = new LinkedMultiValueMap<>();
+            param.add("file", resource);
+            param.add("corporationCode", RSAUtil.encrypt(RSAUtil.loadPublicKey(publicKeyStr),corporationCode.getBytes()));
+            String result = rest.postForObject(url, param, String.class);
+            file.delete();
+            Result result1 = JSON.parseObject(result, Result.class);
+
+            logger.info("apiData 结果=>" + result);
+            logger.info("apiData 结果=>" + result1.isSuccess());
+            return result1.isSuccess();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    private static void createZip(ZipOutputStream zos, byte[] b) {
+        try {
+            zos.putNextEntry(new ZipEntry("param.txt"));
+            zos.setComment("by zip test!");
+            zos.write(b, 0, b.length);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 判断文件是否存在
+    public static boolean fileExists(File file) {
+
+        if (file.exists()) {
+            //System.out.println("file exists");
+            return true;
+        } /*else {
+            System.out.println("file not exists, create it ...");
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }*/
+        return false;
+    }
+
+    // 判断文件夹是否存在
+    public static boolean dirExists(File file) {
+
+        if (file.exists()) {
+            if (file.isDirectory()) {
+                return true;
+                //System.out.println("dir exists");
+            } else {
+                return false;
+                //System.out.println("the same name file exists, can not create dir");
+            }
+        } /*else {
+            System.out.println("dir not exists, create it ...");
+            file.mkdir();
+        }*/
+        return false;
     }
 }

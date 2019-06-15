@@ -187,7 +187,7 @@ refresh_time	Date	更新时间	否	2018-07-01  11:29:30	调用更新接口更新
                     "    \"tableName\": \"Business\"\n" +
                     "}";
 
-
+jdbc:odbc:Driver={Microsoft Visual FoxPro Driver};SourceType=DBF;SourceDB=C:\Users\Administrator\Desktop\EOD\20180208";Exclusive=No;
 
 3.Bill Detail  账单销售明细表	该表主键为 store_id + serial + item_name 三个字段为联合主键,确保本条数据的唯一性
 字段名称	字段类型	字段说明	允许为空	格式示例

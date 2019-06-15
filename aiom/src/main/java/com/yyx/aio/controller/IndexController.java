@@ -8,6 +8,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -50,9 +51,14 @@ public class IndexController {
 
 
     @PostMapping(value = "/upload_action")
-    public String uploadAction(Model model,@RequestParam("date") String date) {
-        userServiceimpl.uploadAction(date);
-        model.addAttribute("name", "上传成功");
-        return "success";
+    public String uploadAction(Model model,@RequestParam("date") String date, RedirectAttributes redirectAttributes) {
+        boolean b = userServiceimpl.uploadAction(date);
+        model.addAttribute("name", "上传数据失败");
+        redirectAttributes.addFlashAttribute("name", "上传数据失败");
+        if(b){
+            model.addAttribute("name", "上传数据成功");
+            redirectAttributes.addFlashAttribute("name", "上传数据成功");
+        }
+        return "redirect:/upload";
     }
 }

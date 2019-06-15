@@ -6,12 +6,13 @@ import java.io.IOException;//数据库连接类：
 
 public class SelectDbfUtil {
     Connection con = null;
-    public SelectDbfUtil() throws SQLException {
+    String dataBaseUrl = null;
+    public SelectDbfUtil(String dataBaseUrl) throws SQLException {
+        this.dataBaseUrl=dataBaseUrl;
         getConnection();
     }
     public Connection getConnection() throws SQLException {
         try {
-            String dataBaseUrl = "C:\\Users\\Administrator\\Desktop\\EOD\\20180208";
             String strurl = "jdbc:odbc:Driver={Microsoft Visual FoxPro Driver};SourceType=DBF;SourceDB="
                     + dataBaseUrl + ";Exclusive=No;";
             Class.forName("sun.jdbc.odbc.JdbcOdbcDriver");
@@ -33,7 +34,7 @@ public class SelectDbfUtil {
         System.out.println("输出：");
         SelectDbfUtil cont = null;
         try {
-            cont = new SelectDbfUtil();
+            cont = new SelectDbfUtil("C:\\Users\\Administrator\\Desktop\\EOD\\20180208");
             con = cont.getConnection();
 
             String sql = "SELECT  sum(Qty*OPRICE) as sale_AMOUNT FROM CTI.dbf";

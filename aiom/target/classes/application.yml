@@ -65,6 +65,13 @@ management:
 
 dbf:
   store:
-    location_id: 7023
-    store_id: 01060125
-    store_name: 满记甜品
+    location_id: "7023"
+    store_id: "01060125"
+    store_name: "满记甜品"
+    FBPosDataBaseUrl: C:\PointSoft\FBPos\data
+    EodDataBaseUrl: C:\PointSoft\Eod\
+    url: "https://bi.tcsl.com.cn:8055/lb/api/data"
+    urlStr: "https://bi.tcsl.com.cn:8055/lb/api/data/str"
+    desKey: "38ab46f762e63b64"
+    corporationCode: "000062"
+    publicKeyStr: "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCIsGBo7H2RwlwS0p01THCCA8vX6keZ143G+pP1MMtDve9lPPgRt2IAUAmGc/79a9O69C1u5j+ebdK9a5BfjXwQcyEgV2nRlJjr83O0zwoTp6Mc4WuT5ACNGrHUdijxBW9O+pZRmql5nZES8HrkKb0EtsF6PRguqmFsxg1t3eeqSQIDAQAB"
