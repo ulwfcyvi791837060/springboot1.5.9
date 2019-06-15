@@ -544,33 +544,10 @@ public class UserServiceImpl implements UserService {
                 billDetail.setTime(sdf3.format(now));
                 billDetail.setRefresh_time(sdf3.format(now));
 
-                String param="";
-                param = "{\n" +
-                        "    \"columnNames\": [\n" +
-                        "        \"location_id\",\n" +
-                        "        \"store_id\",\n" +
-                        "        \"store_name\",\n" +
-                        "        \"b_date\",\n" +
-                        "        \"start_time\",\n" +
-                        "        \"end_time\",\n" +
-                        "        \"item_name\",\n" +
-                        "        \"item_category\",\n" +
-                        "        \"item_sub_category\",\n" +
-                        "        \"original_price\",\n" +
-                        "        \"actual_price\",\n" +
-                        "        \"item_num\",\n" +
-                        "        \"receivable\",\n" +
-                        "        \"real_income\",\n" +
-                        "        \"disc_money\",\n" +
-                        "        \"is_chargeback\",\n" +
-                        "        \"chargeback_price\",\n" +
-                        "        \"chargeback_num\",\n" +
-                        "        \"time\",\n" +
-                        "        \"refresh_time\",\n" +
-                        "    ],\n" +
-                        "    \"keyCol\": \"store_id,serial,item_name\",\n" +
-                        "    \"records\": [\n" +
-                        "        [\n" +
+                if(recordsSb.length()>0){
+                    recordsSb.append(",");
+                }
+                recordsSb.append("        [\n" +
                         "            \""+locationId+"\",\n" +
                         "            \""+storeId+"\",\n" +
                         "            \""+storeName+"\",\n" +
@@ -591,13 +568,41 @@ public class UserServiceImpl implements UserService {
                         "            \""+billDetail.getChargeback_num()+"\",\n" +
                         "            \""+billDetail.getTime()+"\",\n" +
                         "            \""+billDetail.getRefresh_time()+"\",\n" +
-                        "        ]\n" +
-                        "    ],\n" +
-                        "    \"tableName\": \"Bill Detail\"\n" +
-                        "}";
-                return apiDataStr(param);
-            }
+                        "        ]\n"  );
 
+
+            }
+            String param="";
+            param = "{\n" +
+                    "    \"columnNames\": [\n" +
+                    "        \"location_id\",\n" +
+                    "        \"store_id\",\n" +
+                    "        \"store_name\",\n" +
+                    "        \"b_date\",\n" +
+                    "        \"start_time\",\n" +
+                    "        \"end_time\",\n" +
+                    "        \"item_name\",\n" +
+                    "        \"item_category\",\n" +
+                    "        \"item_sub_category\",\n" +
+                    "        \"original_price\",\n" +
+                    "        \"actual_price\",\n" +
+                    "        \"item_num\",\n" +
+                    "        \"receivable\",\n" +
+                    "        \"real_income\",\n" +
+                    "        \"disc_money\",\n" +
+                    "        \"is_chargeback\",\n" +
+                    "        \"chargeback_price\",\n" +
+                    "        \"chargeback_num\",\n" +
+                    "        \"time\",\n" +
+                    "        \"refresh_time\",\n" +
+                    "    ],\n" +
+                    "    \"keyCol\": \"store_id,serial,item_name\",\n" +
+                    "    \"records\": [\n" +
+                    recordsSb.toString()+
+                    "    ],\n" +
+                    "    \"tableName\": \"Bill Detail\"\n" +
+                    "}";
+            return apiDataStr(param);
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -669,24 +674,10 @@ public class UserServiceImpl implements UserService {
                 paytypeDetail.setTime(sdf3.format(now));
                 paytypeDetail.setRefresh_time(sdf3.format(now));
 
-                String param="";
-                param = "{\n" +
-                        "    \"columnNames\": [\n" +
-                        "        \"location_id\",\n" +
-                        "        \"store_id\",\n" +
-                        "        \"store_name\",\n" +
-                        "        \"b_date\",\n" +
-                        "        \"serial\",\n" +
-                        "        \"start_time\",\n" +
-                        "        \"end_time\",\n" +
-                        "        \"paytype\",\n" +
-                        "        \"paytype_income\",\n" +
-                        "        \"time\",\n" +
-                        "        \"refresh_time\"\n" +
-                        "    ],\n" +
-                        "    \"keyCol\": \"store_id,serial,paytype\",\n" +
-                        "    \"records\": [\n" +
-                        "        [\n" +
+                if(recordsSb.length()>0){
+                    recordsSb.append(",");
+                }
+                recordsSb.append("        [\n" +
                         "            \""+locationId+"\",\n" +
                         "            \""+storeId+"\",\n" +
                         "            \""+storeName+"\",\n" +
@@ -698,13 +689,32 @@ public class UserServiceImpl implements UserService {
                         "            \""+paytypeDetail.getPaytype_income()+"\",\n" +
                         "            \""+paytypeDetail.getTime()+"\",\n" +
                         "            \""+paytypeDetail.getRefresh_time()+"\",\n" +
-                        "        ]\n" +
-                        "    ],\n" +
-                        "    \"tableName\": \"Paytype Detail\"\n" +
-                        "}";
-                return apiDataStr(param);
-            }
+                        "        ]\n"  );
 
+
+            }
+            String param="";
+            param = "{\n" +
+                    "    \"columnNames\": [\n" +
+                    "        \"location_id\",\n" +
+                    "        \"store_id\",\n" +
+                    "        \"store_name\",\n" +
+                    "        \"b_date\",\n" +
+                    "        \"serial\",\n" +
+                    "        \"start_time\",\n" +
+                    "        \"end_time\",\n" +
+                    "        \"paytype\",\n" +
+                    "        \"paytype_income\",\n" +
+                    "        \"time\",\n" +
+                    "        \"refresh_time\"\n" +
+                    "    ],\n" +
+                    "    \"keyCol\": \"store_id,serial,paytype\",\n" +
+                    "    \"records\": [\n" +
+                    recordsSb.toString()+
+                    "    ],\n" +
+                    "    \"tableName\": \"Paytype Detail\"\n" +
+                    "}";
+            return apiDataStr(param);
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -776,24 +786,10 @@ public class UserServiceImpl implements UserService {
                 discountDetail.setTime(sdf3.format(now));
                 discountDetail.setRefresh_time(sdf3.format(now));
 
-                String param="";
-                param = "{\n" +
-                        "    \"columnNames\": [\n" +
-                        "        \"location_id\",\n" +
-                        "        \"store_id\",\n" +
-                        "        \"store_name\",\n" +
-                        "        \"b_date\",\n" +
-                        "        \"serial\",\n" +
-                        "        \"start_time\",\n" +
-                        "        \"end_time\",\n" +
-                        "        \"discount_type\",\n" +
-                        "        \"discount_amount\",\n" +
-                        "        \"time\",\n" +
-                        "        \"refresh_time\",\n" +
-                        "    ],\n" +
-                        "    \"keyCol\": \"store_id,serial,discount_type\",\n" +
-                        "    \"records\": [\n" +
-                        "        [\n" +
+                if(recordsSb.length()>0){
+                    recordsSb.append(",");
+                }
+                recordsSb.append("        [\n" +
                         "            \""+locationId+"\",\n" +
                         "            \""+storeId+"\",\n" +
                         "            \""+storeName+"\",\n" +
@@ -805,13 +801,32 @@ public class UserServiceImpl implements UserService {
                         "            \""+discountDetail.getDiscount_amount()+"\",\n" +
                         "            \""+discountDetail.getTime()+"\",\n" +
                         "            \""+discountDetail.getRefresh_time()+"\",\n" +
-                        "        ]\n" +
-                        "    ],\n" +
-                        "    \"tableName\": \"Discount Detail\"\n" +
-                        "}";
-                return apiDataStr(param);
-            }
+                        "        ]\n"  );
 
+
+            }
+            String param="";
+            param = "{\n" +
+                    "    \"columnNames\": [\n" +
+                    "        \"location_id\",\n" +
+                    "        \"store_id\",\n" +
+                    "        \"store_name\",\n" +
+                    "        \"b_date\",\n" +
+                    "        \"serial\",\n" +
+                    "        \"start_time\",\n" +
+                    "        \"end_time\",\n" +
+                    "        \"discount_type\",\n" +
+                    "        \"discount_amount\",\n" +
+                    "        \"time\",\n" +
+                    "        \"refresh_time\",\n" +
+                    "    ],\n" +
+                    "    \"keyCol\": \"store_id,serial,discount_type\",\n" +
+                    "    \"records\": [\n" +
+                    recordsSb.toString()+
+                    "    ],\n" +
+                    "    \"tableName\": \"Discount Detail\"\n" +
+                    "}";
+            return apiDataStr(param);
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -820,13 +835,14 @@ public class UserServiceImpl implements UserService {
     }
 
     public boolean apiDataStr(String param){
+        logger.info("apiDataStr(String param)=>"+param);
         if(true){
             return apiData(param);
         }
         //String url = "/api/data/str";
         //测试环境：https://lb-test.tcsl.com.cn:8079/bi_proxy/
         //String url = "https://lb-test.tcsl.com.cn:8079/bi_proxy//api/data/str";
-        logger.info("apiDataStr(String param)=>",param);
+
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
