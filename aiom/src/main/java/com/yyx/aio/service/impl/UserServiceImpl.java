@@ -387,14 +387,14 @@ public class UserServiceImpl implements UserService {
 
                 sql="SELECT NUMBER,sum(AMOUNT) as real_income,max(TIME) as end_time FROM CTP.dbf where not isnull(AMOUNT) and " +
                         "NUMBER ="+NUMBER+" AND PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES) group by NUMBER \n";
-                st = con.createStatement();
+                Statement st2 = con.createStatement();
 
-                rs = st.executeQuery(sql);
+                ResultSet rs2 = st2.executeQuery(sql);
                 String real_income="";
                 String end_time="";
-                while (rs.next()) {
-                    real_income = rs.getString("real_income");
-                    end_time = rs.getString("end_time");
+                while (rs2.next()) {
+                    real_income = rs2.getString("real_income");
+                    end_time = rs2.getString("end_time");
                 }
 
 
@@ -511,14 +511,14 @@ public class UserServiceImpl implements UserService {
 
                 sql="SELECT NUMBER,sum(AMOUNT) as real_income,max(TIME) as end_time FROM CTP.dbf where not isnull(AMOUNT) and " +
                         "NUMBER ="+NUMBER+" AND PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES) group by NUMBER \n";
-                st = con.createStatement();
+                Statement st2 = con.createStatement();
 
-                rs = st.executeQuery(sql);
+                ResultSet rs2 = st2.executeQuery(sql);
                 String real_income="";
                 String end_time="";
-                while (rs.next()) {
-                    real_income = rs.getString("real_income");
-                    end_time = rs.getString("end_time");
+                while (rs2.next()) {
+                    real_income = rs2.getString("real_income");
+                    end_time = rs2.getString("end_time");
                 }
 
                 billDetail.setLocation_id("");
@@ -652,14 +652,14 @@ public class UserServiceImpl implements UserService {
 
                 sql="SELECT NUMBER,sum(AMOUNT) as real_income,max(TIME) as end_time FROM CTP.dbf where not isnull(AMOUNT) and " +
                         "NUMBER ="+NUMBER+" AND PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES) group by NUMBER \n";
-                st = con.createStatement();
+                Statement st2 = con.createStatement();
 
-                rs = st.executeQuery(sql);
+                ResultSet rs2 = st2.executeQuery(sql);
                 String real_income="";
                 String end_time="";
-                while (rs.next()) {
-                    real_income = rs.getString("real_income");
-                    end_time = rs.getString("end_time");
+                while (rs2.next()) {
+                    real_income = rs2.getString("real_income");
+                    end_time = rs2.getString("end_time");
                 }
 
                 paytypeDetail.setLocation_id("");
@@ -760,14 +760,14 @@ public class UserServiceImpl implements UserService {
 
                 sql="SELECT NUMBER,sum(AMOUNT) as real_income,max(TIME) as end_time FROM CTP.dbf where not isnull(AMOUNT) and " +
                         "NUMBER ="+NUMBER+" AND PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES) group by NUMBER \n";
-                st = con.createStatement();
+                Statement st2 = con.createStatement();
 
-                rs = st.executeQuery(sql);
+                ResultSet rs2 = st2.executeQuery(sql);
                 String real_income="";
                 String end_time="";
-                while (rs.next()) {
-                    real_income = rs.getString("real_income");
-                    end_time = rs.getString("end_time");
+                while (rs2.next()) {
+                    real_income = rs2.getString("real_income");
+                    end_time = rs2.getString("end_time");
                 }
 
                 /*表五，也用表二的SQL
