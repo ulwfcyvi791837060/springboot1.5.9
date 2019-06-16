@@ -68,7 +68,9 @@ public class TaskJob {
         Date now = new Date();
         log.info("【job22】开始执行：{}", DateUtil.formatDateTime(now));
 
-        UserServiceImpl.uploadAction(sdf3.format(now),true);
+        //UserServiceImpl.uploadAction(sdf3.format(now),true);
+
+        UserServiceImpl.uploadAction("20180208",true);
     }
 
     /**

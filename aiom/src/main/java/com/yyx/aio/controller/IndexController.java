@@ -1,6 +1,5 @@
 package com.yyx.aio.controller;
 
-import com.yyx.aio.common.file.SelectDbfUtil;
 import com.yyx.aio.entity.Result;
 import com.yyx.aio.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,11 +9,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 
 /**
  * <p>

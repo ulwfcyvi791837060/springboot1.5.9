@@ -2,7 +2,8 @@ package com.yyx.aio.service.impl;
 
 import cn.hutool.core.date.DateUtil;
 import com.alibaba.fastjson.JSON;
-import com.yyx.aio.common.file.SelectDbfUtil;
+import com.yyx.aio.common.file.EodGetConn;
+import com.yyx.aio.common.file.FBPosGetConn;
 import com.yyx.aio.entity.*;
 import com.yyx.aio.mapper.UserMapper;
 import com.yyx.aio.service.UserService;
@@ -41,8 +42,7 @@ import java.util.zip.ZipOutputStream;
  * @Author zenghuikang
  * @Description 
  * @Date 2019/6/14 18:06 
-  * @param null
- * @return 
+ * @return
  * @throws 
  **/
 @Service("userService")
@@ -76,12 +76,11 @@ public class UserServiceImpl implements UserService {
     @Value("${dbf.store.corporationCode}")
     private String corporationCode;
 
-    @Value("${dbf.store.FBPosDataBaseUrl}")
-    private String FBPosDataBaseUrl;
-
     @Value("${dbf.store.EodDataBaseUrl}")
-    private String EodDataBaseUrl;
+    private String eodDataBaseUrl;
 
+    @Value("${dbf.store.FBPosDataBaseUrl}")
+    private String fBPosDataBaseUrl;
 
 
     @Override
@@ -110,15 +109,9 @@ public class UserServiceImpl implements UserService {
         String m = date.substring(4, 5);
         String d = date.substring(6, 7);
         String day =y+"-"+m+"-"+d;
-        Statement st = null;
-        ResultSet rs = null;
-        Connection con =null;
-        String dirFile=EodDataBaseUrl+"\\"+date;
+        String dirFile=eodDataBaseUrl+"\\"+date;
         logger.info("输出：");
-        SelectDbfUtil cont = null;
         try {
-            cont = new SelectDbfUtil(dirFile);
-            con = cont.getConnection();
 
             boolean b = dirExists(new File(dirFile));
 
@@ -128,7 +121,8 @@ public class UserServiceImpl implements UserService {
                 //自动上传，表一是从 【清机后】的数据库中取数据
                 //自动上传 表二到表五 是从 营业中 数据库中取数据
                 logger.info("正在上传==>"+dirFile);
-                boolean b1 = processSummary(st, rs, con, day);
+
+                boolean b1 = processSummary(eodDataBaseUrl+date, day);
                 if(!b1){
                     logger.info("summary上传失败");
                     result.setSuccess(false);
@@ -147,23 +141,30 @@ public class UserServiceImpl implements UserService {
             }
 
             if(auto){
-                dirFile=FBPosDataBaseUrl+"\\"+date;
-                cont = new SelectDbfUtil(dirFile);
-                con = cont.getConnection();
+                //没清机的有20180207这种形式的目录吗
+                //dirFile=fBPosDataBaseUrl+"\\"+date;
+                dirFile=fBPosDataBaseUrl;
             }
 
             //表2-5是按流水传，3-5分钟传一次即可
             //手动传都传的清机后的吗? 是的
 
-            boolean fBPosDataBaseUrl = dirExists(new File(dirFile));
+            boolean fb = dirExists(new File(dirFile));
 
-            if(fBPosDataBaseUrl){
+            if(fb){
                 //自动上传 表一，只上传一次，最好从【清机后】的数据库中取数据（如果存在这个数据库目录，才上传）
                 //表1是一天传一次完整的，
                 //自动上传，表一是从 【清机后】的数据库中取数据
                 //自动上传 表二到表五 是从 营业中 数据库中取数据
                 logger.info("正在上传==>"+dirFile);
-                boolean b2 = processBusiness(st, rs, con, day,date);
+                String con =null;
+                if(auto){
+                    con = fBPosDataBaseUrl;
+                }else{
+                    con = eodDataBaseUrl+date;
+                }
+
+                boolean b2 = processBusiness(con, day,date);
                 if(!b2){
                     logger.info("Business上传失败");
                     result.setSuccess(false);
@@ -175,7 +176,12 @@ public class UserServiceImpl implements UserService {
                     result.setMsg(result.getMsg()+","+"Business上传成功");
                 }
                 logger.info("正在上传==>"+dirFile);
-                boolean b1 = processBillDetail(st, rs, con, day,date);
+                if(auto){
+                    con = fBPosDataBaseUrl;
+                }else{
+                    con = eodDataBaseUrl+date;
+                }
+                boolean b1 = processBillDetail(con, day,date);
                 if(!b1){
                     logger.info("BillDetail上传失败");
                     result.setSuccess(false);
@@ -187,7 +193,12 @@ public class UserServiceImpl implements UserService {
                     result.setMsg(result.getMsg()+","+"BillDetail上传成功");
                 }
                 logger.info("正在上传==>"+dirFile);
-                boolean b3 = processPaytypeDetail(st, rs, con, day,date);
+                if(auto){
+                    con = fBPosDataBaseUrl;
+                }else{
+                    con =eodDataBaseUrl+date;
+                }
+                boolean b3 = processPaytypeDetail(con, day,date);
                 if(!b3){
                     logger.info("PaytypeDetail上传失败");
                     result.setSuccess(false);
@@ -199,7 +210,12 @@ public class UserServiceImpl implements UserService {
                     result.setMsg(result.getMsg()+","+"PaytypeDetail上传成功");
                 }
                 logger.info("正在上传==>"+dirFile);
-                boolean b4 = processDiscountDetail(st, rs, con, day,date);
+                if(auto){
+                    con = fBPosDataBaseUrl;
+                }else{
+                    con =eodDataBaseUrl+date;
+                }
+                boolean b4 = processDiscountDetail(con, day,date);
                 if(!b4){
                     logger.info("DiscountDetail上传失败");
                     result.setSuccess(false);
@@ -217,28 +233,9 @@ public class UserServiceImpl implements UserService {
                 //result =false;
                 //return result;
             }
-
-
-
-
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
-
-        try {
-            if (rs != null) {
-                rs.close();
-            }
-            if (st != null) {
-                st.close();
-            }
-            if (con != null) {
-                con.close();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
         return result;
     }
 
@@ -247,19 +244,26 @@ public class UserServiceImpl implements UserService {
      * @Author zenghuikang
      * @Description
      * @Date 2019/6/15 11:07
-      * @param st
-     * @param rs
-     * @param con
+      * @param url
      * @param day
      * @return boolean
      * @throws
      **/
-    private boolean processSummary(Statement st, ResultSet rs, Connection con, String day ) {
+    private boolean processSummary(String url,String day ) {
         String sql = "SELECT  sum(AMOUNT) as net_AMOUNT FROM CTP.dbf where not isnull(AMOUNT) AND (PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES))";
-        //logger.info("结果=>" + sql);
+        logger.info("sql=>" + sql);
+
+        Connection con = null;
+        try {
+            con = EodGetConn.getGc().getCon(url);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        Statement st = null;
+        ResultSet rs = null;
         try {
             st = con.createStatement();
-
             rs = st.executeQuery(sql);
 
             Summary summary = new Summary();
@@ -325,10 +329,11 @@ public class UserServiceImpl implements UserService {
                         "}";
                 return apiDataStr(param);
             }
-
-
-        } catch (SQLException e) {
-            e.printStackTrace();
+        }catch (SQLException ex) {
+            ///错误处理
+            logger.info(ex.getMessage());
+        }finally{
+            EodGetConn.getGc().closeAll(rs,st,con);
         }
         return false;
     }
@@ -338,20 +343,29 @@ public class UserServiceImpl implements UserService {
      * @Author zenghuikang
      * @Description
      * @Date 2019/6/15 11:08
-      * @param st
-     * @param rs
-     * @param con
+     * @param url
      * @param day
      * @return boolean
      * @throws
      **/
-    private boolean processBusiness(Statement st, ResultSet rs, Connection con,String day,String date ) {
+    private boolean processBusiness(String url,String day,String date ) {
         String sql = "SELECT NUMBER,sum(Qty*OPRICE) as receivable,max(DATE) as Saledate,min(TIME) as start_time FROM CTI.dbf group by NUMBER";
 
         logger.info("sql=>" + sql);
+        Connection con = null;
+        Connection con2 = null;
+        try {
+            con = EodGetConn.getGc().getCon(url);
+            con2 = EodGetConn.getGc().getCon(url);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        Statement st = null;
+        ResultSet rs = null;
+        Statement st2 = null;
+        ResultSet rs2 = null;
         try {
             st = con.createStatement();
-
             rs = st.executeQuery(sql);
 
             Business business = new Business();
@@ -387,9 +401,9 @@ public class UserServiceImpl implements UserService {
 
                 sql="SELECT NUMBER,sum(AMOUNT) as real_income,max(TIME) as end_time FROM CTP.dbf where not isnull(AMOUNT) and " +
                         "NUMBER ="+NUMBER+" AND PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES) group by NUMBER \n";
-                Statement st2 = con.createStatement();
+                st2 = con2.createStatement();
 
-                ResultSet rs2 = st2.executeQuery(sql);
+                rs2 = st2.executeQuery(sql);
                 String real_income="";
                 String end_time="";
                 while (rs2.next()) {
@@ -460,10 +474,14 @@ public class UserServiceImpl implements UserService {
                     "}";
 
             return apiDataStr(param);
-
-        } catch (SQLException e) {
-            e.printStackTrace();
+        }catch (SQLException ex) {
+            ///错误处理
+            logger.info(ex.getMessage());
+        }finally{
+            EodGetConn.getGc().closeAll(rs,st,con);
+            EodGetConn.getGc().closeAll(rs2,st2,con2);
         }
+
         return false;
     }
 
@@ -472,16 +490,26 @@ public class UserServiceImpl implements UserService {
      * @Author zenghuikang
      * @Description
      * @Date 2019/6/15 11:08
-      * @param st
-     * @param rs
-     * @param con
+     * @param url
      * @param day
      * @return boolean
      * @throws
      **/
-    private boolean processBillDetail(Statement st, ResultSet rs, Connection con,String day, String date ) {
+    private boolean processBillDetail(String url,String day, String date ) {
         String sql = "SELECT NUMBER,sum(Qty*OPRICE) as receivable,max(DATE) as Saledate,min(TIME) as start_time FROM CTI.dbf group by NUMBER";
         logger.info("sql=>" + sql);
+        Connection con = null;
+        Connection con2 = null;
+        try {
+            con = EodGetConn.getGc().getCon(url);
+            con2 = EodGetConn.getGc().getCon(url);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        Statement st = null;
+        ResultSet rs = null;
+        Statement st2 = null;
+        ResultSet rs2 = null;
         try {
             st = con.createStatement();
 
@@ -511,9 +539,9 @@ public class UserServiceImpl implements UserService {
 
                 sql="SELECT NUMBER,sum(AMOUNT) as real_income,max(TIME) as end_time FROM CTP.dbf where not isnull(AMOUNT) and " +
                         "NUMBER ="+NUMBER+" AND PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES) group by NUMBER \n";
-                Statement st2 = con.createStatement();
+                st2 = con2.createStatement();
 
-                ResultSet rs2 = st2.executeQuery(sql);
+                rs2 = st2.executeQuery(sql);
                 String real_income="";
                 String end_time="";
                 while (rs2.next()) {
@@ -603,9 +631,12 @@ public class UserServiceImpl implements UserService {
                     "    \"tableName\": \"Bill Detail\"\n" +
                     "}";
             return apiDataStr(param);
-
-        } catch (SQLException e) {
-            e.printStackTrace();
+        }catch (SQLException ex) {
+            ///错误处理
+            logger.info(ex.getMessage());
+        }finally{
+            EodGetConn.getGc().closeAll(rs,st,con);
+            EodGetConn.getGc().closeAll(rs2,st2,con2);
         }
         return false;
     }
@@ -615,17 +646,28 @@ public class UserServiceImpl implements UserService {
      * @Author zenghuikang
      * @Description
      * @Date 2019/6/15 11:09
-      * @param st
-     * @param rs
-     * @param con
+     * @param url
      * @param day
      * @return boolean
      * @throws
      **/
-    private boolean processPaytypeDetail(Statement st, ResultSet rs, Connection con,String day,String date ) {
+    private boolean processPaytypeDetail(String url,String day,String date ) {
         String sql = "SELECT NUMBER,sum(Qty*OPRICE) as receivable,max(DATE) as Saledate,min(TIME) as start_time FROM CTI.dbf group by NUMBER";
         logger.info("sql=>" + sql);
+        Connection con = null;
+        Connection con2 = null;
         try {
+            con = EodGetConn.getGc().getCon(url);
+            con2 = EodGetConn.getGc().getCon(url);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        Statement st = null;
+        ResultSet rs = null;
+        Statement st2 = null;
+        ResultSet rs2 = null;
+        try {
+
             st = con.createStatement();
 
             rs = st.executeQuery(sql);
@@ -652,9 +694,9 @@ public class UserServiceImpl implements UserService {
 
                 sql="SELECT NUMBER,sum(AMOUNT) as real_income,max(TIME) as end_time FROM CTP.dbf where not isnull(AMOUNT) and " +
                         "NUMBER ="+NUMBER+" AND PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES) group by NUMBER \n";
-                Statement st2 = con.createStatement();
+                st2 = con2.createStatement();
 
-                ResultSet rs2 = st2.executeQuery(sql);
+                rs2 = st2.executeQuery(sql);
                 String real_income="";
                 String end_time="";
                 while (rs2.next()) {
@@ -715,10 +757,14 @@ public class UserServiceImpl implements UserService {
                     "    \"tableName\": \"Paytype Detail\"\n" +
                     "}";
             return apiDataStr(param);
-
-        } catch (SQLException e) {
-            e.printStackTrace();
+        }catch (SQLException ex) {
+            ///错误处理
+            logger.info(ex.getMessage());
+        }finally{
+            EodGetConn.getGc().closeAll(rs,st,con);
+            EodGetConn.getGc().closeAll(rs2,st2,con2);
         }
+
         return false;
     }
 
@@ -728,17 +774,28 @@ public class UserServiceImpl implements UserService {
      * @Author zenghuikang
      * @Description
      * @Date 2019/6/15 11:09
-     * @param st
-     * @param rs
-     * @param con
+     * @param url
      * @param day
      * @return boolean
      * @throws
      **/
-    private boolean processDiscountDetail(Statement st, ResultSet rs, Connection con,String day ,String date ) {
+    private boolean processDiscountDetail(String url,String day ,String date ) {
         String sql = "SELECT NUMBER,sum(Qty*OPRICE) as receivable,max(DATE) as Saledate,min(TIME) as start_time FROM CTI.dbf group by NUMBER";
         logger.info("sql=>" + sql);
+        Connection con = null;
+        Connection con2 = null;
         try {
+            con = EodGetConn.getGc().getCon(url);
+            con2 = EodGetConn.getGc().getCon(url);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        Statement st = null;
+        ResultSet rs = null;
+        Statement st2 = null;
+        ResultSet rs2 = null;
+        try {
+
             st = con.createStatement();
 
             rs = st.executeQuery(sql);
@@ -760,9 +817,9 @@ public class UserServiceImpl implements UserService {
 
                 sql="SELECT NUMBER,sum(AMOUNT) as real_income,max(TIME) as end_time FROM CTP.dbf where not isnull(AMOUNT) and " +
                         "NUMBER ="+NUMBER+" AND PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES) group by NUMBER \n";
-                Statement st2 = con.createStatement();
+                st2 = con2.createStatement();
 
-                ResultSet rs2 = st2.executeQuery(sql);
+                rs2 = st2.executeQuery(sql);
                 String real_income="";
                 String end_time="";
                 while (rs2.next()) {
@@ -827,9 +884,12 @@ public class UserServiceImpl implements UserService {
                     "    \"tableName\": \"Discount Detail\"\n" +
                     "}";
             return apiDataStr(param);
-
-        } catch (SQLException e) {
-            e.printStackTrace();
+        }catch (SQLException ex) {
+            ///错误处理
+            logger.info(ex.getMessage());
+        }finally{
+            EodGetConn.getGc().closeAll(rs,st,con);
+            EodGetConn.getGc().closeAll(rs2,st2,con2);
         }
         return false;
     }

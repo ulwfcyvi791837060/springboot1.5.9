@@ -1,3 +1,22 @@
+start /b java -Dspring.config.location=/home/deploy/financial-management/config/application.yml -jar /home/deploy/financial-management/gxzx_financial_ser-0.0.1-SNAPSHOT.jar --server.port=8081 >/home/deploy/financial-management/logs/gxzx-fin-web.log
+
+java -Dspring.config.location=/home/deploy/financial-management/config/application.yml -jar /home/deploy/financial-management/gxzx_financial_ser-0.0.1-SNAPSHOT.jar --server.port=8081 >/home/deploy/financial-management/logs/gxzx-fin-web.log &
+
+        Statement st = null;
+        ResultSet rs = null;
+        Statement st2 = null;
+        ResultSet rs2 = null;
+        try {
+
+            ...
+        }catch (SQLException ex) {
+            ///错误处理
+            logger.info(ex.getMessage());
+        }finally{
+            EodGetConn.getGc().closeAll(rs,st,con);
+            EodGetConn.getGc().closeAll(rs2,st2,con);
+        }
+
 
 还要加一个程序的配置文件：
 有两个数据库目录，pointsoft_path=C:\pointsoft\EOD\      清机后

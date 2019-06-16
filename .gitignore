@@ -104,3 +104,4 @@ $RECYCLE.BIN/
 aiom/.idea/
 *.iml
 aiom/src/main/resources/application.yml
+aiom/target/
