@@ -105,3 +105,4 @@ aiom/.idea/
 *.iml
 aiom/src/main/resources/application.yml
 aiom/target/
+aiom/src/main/resources/readme.txt
