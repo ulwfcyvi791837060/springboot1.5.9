@@ -21,7 +21,8 @@ public class FBPosGetConn {
     static{
         try {
             //注册驱动
-            Class.forName("com.mysql.jdbc.Driver");
+            //Class.forName("com.mysql.jdbc.Driver");
+            Class.forName("sun.jdbc.odbc.JdbcOdbcDriver");
         } catch (ClassNotFoundException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
