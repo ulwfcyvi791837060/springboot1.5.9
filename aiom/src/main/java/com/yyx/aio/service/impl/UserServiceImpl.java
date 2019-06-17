@@ -105,9 +105,9 @@ public class UserServiceImpl implements UserService {
             result.setMsg("输入的日期格式不对");
             return result;
         }
-        String y = date.substring(0, 3);
-        String m = date.substring(4, 5);
-        String d = date.substring(6, 7);
+        String y = date.substring(0, 4);
+        String m = date.substring(4, 6);
+        String d = date.substring(6,8 );
         String day =y+"-"+m+"-"+d;
         String dirFile=eodDataBaseUrl+"\\"+date;
         logger.info("输出：");
@@ -322,7 +322,7 @@ public class UserServiceImpl implements UserService {
                         "            \""+summary.getsChargeback()+"\",\n" +
                         "            \""+summary.getsChargebackNum()+"\",\n" +
                         "            \""+summary.getsTime()+"\",\n" +
-                        "            \""+summary.getsRefreshTime()+"\",\n" +
+                        "            \""+summary.getsRefreshTime()+"\"\n" +
                         "        ]\n" +
                         "    ],\n" +
                         "    \"tableName\": \"Summary\"\n" +
@@ -445,7 +445,7 @@ public class UserServiceImpl implements UserService {
                         "            \""+business.getIs_chargeback()+"\",\n" +
                         "            \""+business.getChargeback()+"\",\n" +
                         "            \""+business.getTime()+"\",\n" +
-                        "            \""+business.getRefresh_time()+"\",\n" +
+                        "            \""+business.getRefresh_time()+"\"\n" +
                         "        ]\n" );
 
             }
@@ -580,6 +580,7 @@ public class UserServiceImpl implements UserService {
                         "            \""+storeId+"\",\n" +
                         "            \""+storeName+"\",\n" +
                         "            \""+billDetail.getB_date()+" 00:00:00\",\n" +
+                        "            \""+billDetail.getSerial()+"\",\n" +
                         "            \""+billDetail.getStart_time()+"\",\n" +
                         "            \""+billDetail.getEnd_time()+"\",\n" +
                         "            \""+billDetail.getItem_name()+"\",\n" +
@@ -595,7 +596,7 @@ public class UserServiceImpl implements UserService {
                         "            \""+billDetail.getChargeback_price()+"\",\n" +
                         "            \""+billDetail.getChargeback_num()+"\",\n" +
                         "            \""+billDetail.getTime()+"\",\n" +
-                        "            \""+billDetail.getRefresh_time()+"\",\n" +
+                        "            \""+billDetail.getRefresh_time()+"\"\n" +
                         "        ]\n"  );
 
 
@@ -607,6 +608,7 @@ public class UserServiceImpl implements UserService {
                     "        \"store_id\",\n" +
                     "        \"store_name\",\n" +
                     "        \"b_date\",\n" +
+                    "        \"serial\",\n" +
                     "        \"start_time\",\n" +
                     "        \"end_time\",\n" +
                     "        \"item_name\",\n" +
@@ -730,7 +732,7 @@ public class UserServiceImpl implements UserService {
                         "            \""+paytypeDetail.getPaytype()+"\",\n" +
                         "            \""+paytypeDetail.getPaytype_income()+"\",\n" +
                         "            \""+paytypeDetail.getTime()+"\",\n" +
-                        "            \""+paytypeDetail.getRefresh_time()+"\",\n" +
+                        "            \""+paytypeDetail.getRefresh_time()+"\"\n" +
                         "        ]\n"  );
 
 
@@ -857,7 +859,7 @@ public class UserServiceImpl implements UserService {
                         "            \""+discountDetail.getDiscount_type()+"\",\n" +
                         "            \""+discountDetail.getDiscount_amount()+"\",\n" +
                         "            \""+discountDetail.getTime()+"\",\n" +
-                        "            \""+discountDetail.getRefresh_time()+"\",\n" +
+                        "            \""+discountDetail.getRefresh_time()+"\"\n" +
                         "        ]\n"  );
 
 
