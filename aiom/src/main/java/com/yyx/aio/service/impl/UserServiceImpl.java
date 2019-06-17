@@ -936,7 +936,8 @@ public class UserServiceImpl implements UserService {
         }
         HttpEntity<String> httpEntity = new HttpEntity<>(JSON.toJSONString(map), headers);
         String result = restTemplate.postForObject(urlHttpStr, httpEntity, String.class);
-
+        logger.info("apiDataStr_urlHttpStr=>" + urlHttpStr);
+        logger.info("apiDataStr_httpEntity=>" + httpEntity);
         Result result1 = JSON.parseObject(result, Result.class);
 
         logger.info("apiDataStr结果=>" + result);
