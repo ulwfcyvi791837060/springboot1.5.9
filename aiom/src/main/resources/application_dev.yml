@@ -7,9 +7,9 @@ logging:
   config: classpath:logback-spring.xml
   level:
     com:
-     yyx:
-      website:
-       mapper: debug
+      yyx:
+        website:
+          mapper: debug
 #context-listener监听
 context:
   listener:
@@ -19,22 +19,26 @@ spring:
   application:
     name: aiom
   datasource:
-    type: com.alibaba.druid.pool.DruidDataSource
-    url: jdbc:mysql://192.168.1.191:3306/aiom?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull
-    username: root
-    password: root
-    driver-class-name: com.mysql.jdbc.Driver
-    filters: stat,wall,log4j
-    connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
-    tomcat:
-      min-idle: 5
-      max-active: 20
-      initial-size: 5
-      max-wait: 60000
-      time-between-eviction-runs-millis: 60000
-      min-evictable-idle-time-millis: 300000
-    dbcp2:
-      cache-state: false
+    url: jdbc:h2:~/test;AUTO_SERVER=TRUE;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    #datasource:
+    #type: com.alibaba.druid.pool.DruidDataSource
+    #url: jdbc:mysql://192.168.1.191:3306/aiom?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull
+    #username: root
+    #password: root
+    #driver-class-name: com.mysql.jdbc.Driver
+    #filters: stat,wall,log4j
+    #connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+    #tomcat:
+    #min-idle: 5
+    #max-active: 20
+    #initial-size: 5
+    #max-wait: 60000
+    #time-between-eviction-runs-millis: 60000
+    #min-evictable-idle-time-millis: 300000
+    #dbcp2:
+    #cache-state: false
 
   servlet:
     multipart:
@@ -50,17 +54,17 @@ spring:
     content-type: text/html
     cache: false
 
-#mybatis配置
-mybatis:
-  mapper-locations: classpath:/mybatis/*.xml
-  configuration:
-    map-underscore-to-camel-case: true
-    use-column-label: true
-  type-aliases-package: com.yyx.aio.entity
-#查看运行情况。是否敏感
-management:
-  security:
-    enabled: false
+    #mybatis配置
+    #mybatis:
+    #mapper-locations: classpath:/mybatis/*.xml
+    #configuration:
+    #map-underscore-to-camel-case: true
+    #use-column-label: true
+    #type-aliases-package: com.yyx.aio.entity
+    #查看运行情况。是否敏感
+    #management:
+    #security:
+    #enabled: false
 
 
 dbf:
@@ -70,8 +74,8 @@ dbf:
     store_name: "满记甜品"
     FBPosDataBaseUrl: C:\PointSoft\FBPos\data
     EodDataBaseUrl: C:\PointSoft\Eod\
-    url: "https://bi.tcsl.com.cn:8055/lb/api/data"
-    urlStr: "https://bi.tcsl.com.cn:8055/lb/api/data/str"
+    url: ""
+    urlStr: ""
     desKey: ""
-    corporationCode: "000062"
+    corporationCode: ""
     publicKeyStr: "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCIsGBo7H2RwlwS0p01THCCA8vX6keZ143G+pP1MMtDve9lPPgRt2IAUAmGc/79a9O69C1u5j+ebdK9a5BfjXwQcyEgV2nRlJjr83O0zwoTp6Mc4WuT5ACNGrHUdijxBW9O+pZRmql5nZES8HrkKb0EtsF6PRguqmFsxg1t3eeqSQIDAQAB"
