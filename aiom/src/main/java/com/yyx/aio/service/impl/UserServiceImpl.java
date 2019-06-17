@@ -2,6 +2,7 @@ package com.yyx.aio.service.impl;
 
 import cn.hutool.core.date.DateUtil;
 import com.alibaba.fastjson.JSON;
+import com.yyx.aio.common.file.AppendContentToFile;
 import com.yyx.aio.common.file.EodGetConn;
 import com.yyx.aio.common.file.FBPosGetConn;
 import com.yyx.aio.entity.*;
@@ -29,6 +30,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -62,10 +64,10 @@ public class UserServiceImpl implements UserService {
     private String storeName;
 
     @Value("${dbf.store.urlStr}")
-    private String urlStr;
+    private String urlHttpStr;
 
     @Value("${dbf.store.url}")
-    private String url;
+    private String urlHttpZip;
 
     @Value("${dbf.store.desKey}")
     private String desKey ;
@@ -157,14 +159,14 @@ public class UserServiceImpl implements UserService {
                 //自动上传，表一是从 【清机后】的数据库中取数据
                 //自动上传 表二到表五 是从 营业中 数据库中取数据
                 logger.info("正在上传==>"+dirFile);
-                String con =null;
+                String conStr =null;
                 if(auto){
-                    con = fBPosDataBaseUrl;
+                    conStr = fBPosDataBaseUrl;
                 }else{
-                    con = eodDataBaseUrl+date;
+                    conStr = eodDataBaseUrl+date;
                 }
 
-                boolean b2 = processBusiness(con, day,date);
+                boolean b2 = processBusiness(conStr, day,date);
                 if(!b2){
                     logger.info("Business上传失败");
                     result.setSuccess(false);
@@ -177,11 +179,11 @@ public class UserServiceImpl implements UserService {
                 }
                 logger.info("正在上传==>"+dirFile);
                 if(auto){
-                    con = fBPosDataBaseUrl;
+                    conStr = fBPosDataBaseUrl;
                 }else{
-                    con = eodDataBaseUrl+date;
+                    conStr = eodDataBaseUrl+date;
                 }
-                boolean b1 = processBillDetail(con, day,date);
+                boolean b1 = processBillDetail(conStr, day,date);
                 if(!b1){
                     logger.info("BillDetail上传失败");
                     result.setSuccess(false);
@@ -194,11 +196,11 @@ public class UserServiceImpl implements UserService {
                 }
                 logger.info("正在上传==>"+dirFile);
                 if(auto){
-                    con = fBPosDataBaseUrl;
+                    conStr = fBPosDataBaseUrl;
                 }else{
-                    con =eodDataBaseUrl+date;
+                    conStr =eodDataBaseUrl+date;
                 }
-                boolean b3 = processPaytypeDetail(con, day,date);
+                boolean b3 = processPaytypeDetail(conStr, day,date);
                 if(!b3){
                     logger.info("PaytypeDetail上传失败");
                     result.setSuccess(false);
@@ -211,11 +213,11 @@ public class UserServiceImpl implements UserService {
                 }
                 logger.info("正在上传==>"+dirFile);
                 if(auto){
-                    con = fBPosDataBaseUrl;
+                    conStr = fBPosDataBaseUrl;
                 }else{
-                    con =eodDataBaseUrl+date;
+                    conStr =eodDataBaseUrl+date;
                 }
-                boolean b4 = processDiscountDetail(con, day,date);
+                boolean b4 = processDiscountDetail(conStr, day,date);
                 if(!b4){
                     logger.info("DiscountDetail上传失败");
                     result.setSuccess(false);
@@ -249,13 +251,13 @@ public class UserServiceImpl implements UserService {
      * @return boolean
      * @throws
      **/
-    private boolean processSummary(String url,String day ) {
+    private boolean processSummary(String conStr,String day ) {
         String sql = "SELECT  sum(AMOUNT) as net_AMOUNT FROM CTP.dbf where not isnull(AMOUNT) AND (PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES))";
         logger.info("sql=>" + sql);
 
         Connection con = null;
         try {
-            con = EodGetConn.getGc().getCon(url);
+            con = EodGetConn.getGc().getCon(conStr);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -268,6 +270,7 @@ public class UserServiceImpl implements UserService {
 
             Summary summary = new Summary();
             SimpleDateFormat sdf3 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            SimpleDateFormat sdf8 = new SimpleDateFormat("yyyy-MM-dd");
             // 创建Date对象，表示当前时间
             Date now = new Date();
             // 调用format()方法，将日期转换为字符串并输出
@@ -327,7 +330,7 @@ public class UserServiceImpl implements UserService {
                         "    ],\n" +
                         "    \"tableName\": \"Summary\"\n" +
                         "}";
-                return apiDataStr(param);
+                return apiDataStr(sdf8.format(now),"_Summary",param);
             }
         }catch (SQLException ex) {
             ///错误处理
@@ -348,15 +351,15 @@ public class UserServiceImpl implements UserService {
      * @return boolean
      * @throws
      **/
-    private boolean processBusiness(String url,String day,String date ) {
+    private boolean processBusiness(String conStr,String day,String date ) {
         String sql = "SELECT NUMBER,sum(Qty*OPRICE) as receivable,max(DATE) as Saledate,min(TIME) as start_time FROM CTI.dbf group by NUMBER";
 
         logger.info("sql=>" + sql);
         Connection con = null;
         Connection con2 = null;
         try {
-            con = EodGetConn.getGc().getCon(url);
-            con2 = EodGetConn.getGc().getCon(url);
+            con = EodGetConn.getGc().getCon(conStr);
+            con2 = EodGetConn.getGc().getCon(conStr);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -371,6 +374,7 @@ public class UserServiceImpl implements UserService {
             Business business = new Business();
 
             SimpleDateFormat sdf3 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            SimpleDateFormat sdf8 = new SimpleDateFormat("yyyy-MM-dd");
             // 创建Date对象，表示当前时间
             Date now = new Date();
             // 调用format()方法，将日期转换为字符串并输出
@@ -417,13 +421,15 @@ public class UserServiceImpl implements UserService {
                 business.setStore_id("");
                 business.setStore_name("");
                 business.setB_date(Saledate);
-                business.setSerial(date+NUMBER);
+                DecimalFormat g1=new DecimalFormat("00000");
+                String startZeroStr = g1.format(Integer.valueOf(NUMBER));
+                business.setSerial(date+startZeroStr);
                 business.setStart_time(Saledate+" "+start_time);
                 business.setEnd_time(Saledate+" "+end_time);
                 business.setReceivable(Double.parseDouble(receivable));
                 business.setReal_income(Double.parseDouble(real_income));
-                business.setDiscount_amount(0.0D);
-                business.setIs_chargeback("");
+                business.setDiscount_amount(Double.parseDouble(receivable)-Double.parseDouble(real_income));
+                business.setIs_chargeback("否");
                 business.setChargeback(0.0D);
                 business.setTime(sdf3.format(now));
                 business.setRefresh_time(sdf3.format(now));
@@ -473,7 +479,7 @@ public class UserServiceImpl implements UserService {
                     "    \"tableName\": \"Business\"\n" +
                     "}";
 
-            return apiDataStr(param);
+            return apiDataStr(sdf8.format(now),"_Business",param);
         }catch (SQLException ex) {
             ///错误处理
             logger.info(ex.getMessage());
@@ -495,14 +501,14 @@ public class UserServiceImpl implements UserService {
      * @return boolean
      * @throws
      **/
-    private boolean processBillDetail(String url,String day, String date ) {
+    private boolean processBillDetail(String conStr,String day, String date ) {
         String sql = "SELECT NUMBER,sum(Qty*OPRICE) as receivable,max(DATE) as Saledate,min(TIME) as start_time FROM CTI.dbf group by NUMBER";
         logger.info("sql=>" + sql);
         Connection con = null;
         Connection con2 = null;
         try {
-            con = EodGetConn.getGc().getCon(url);
-            con2 = EodGetConn.getGc().getCon(url);
+            con = EodGetConn.getGc().getCon(conStr);
+            con2 = EodGetConn.getGc().getCon(conStr);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -518,6 +524,7 @@ public class UserServiceImpl implements UserService {
             BillDetail billDetail = new BillDetail();
 
             SimpleDateFormat sdf3 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            SimpleDateFormat sdf8 = new SimpleDateFormat("yyyy-MM-dd");
             // 创建Date对象，表示当前时间
             Date now = new Date();
             // 调用format()方法，将日期转换为字符串并输出
@@ -553,7 +560,9 @@ public class UserServiceImpl implements UserService {
                 billDetail.setStore_id("");
                 billDetail.setStore_name("");
                 billDetail.setB_date(Saledate);
-                billDetail.setSerial(date+NUMBER);
+                DecimalFormat g1=new DecimalFormat("00000");
+                String startZeroStr = g1.format(Integer.valueOf(NUMBER));
+                billDetail.setSerial(date+startZeroStr);
                 billDetail.setStart_time(Saledate+" "+start_time);
                 billDetail.setEnd_time(Saledate+" "+end_time);
                 billDetail.setItem_name("甜品");
@@ -565,8 +574,8 @@ public class UserServiceImpl implements UserService {
                 billDetail.setItem_num(1D);
                 billDetail.setReceivable(Double.parseDouble(receivable));
                 billDetail.setReal_income(0.0D);
-                billDetail.setDisc_money(0.0D);
-                billDetail.setIs_chargeback("");
+                billDetail.setDisc_money(Double.parseDouble(receivable)-Double.parseDouble(real_income));
+                billDetail.setIs_chargeback("否");
                 billDetail.setChargeback_price(0.0D);
                 billDetail.setChargeback_num(0.0D);
                 billDetail.setTime(sdf3.format(now));
@@ -624,7 +633,7 @@ public class UserServiceImpl implements UserService {
                     "        \"chargeback_price\",\n" +
                     "        \"chargeback_num\",\n" +
                     "        \"time\",\n" +
-                    "        \"refresh_time\",\n" +
+                    "        \"refresh_time\"\n" +
                     "    ],\n" +
                     "    \"keyCol\": \"store_id,serial,item_name\",\n" +
                     "    \"records\": [\n" +
@@ -632,7 +641,7 @@ public class UserServiceImpl implements UserService {
                     "    ],\n" +
                     "    \"tableName\": \"Bill Detail\"\n" +
                     "}";
-            return apiDataStr(param);
+            return apiDataStr(sdf8.format(now),"_Bill_Detail",param);
         }catch (SQLException ex) {
             ///错误处理
             logger.info(ex.getMessage());
@@ -653,14 +662,14 @@ public class UserServiceImpl implements UserService {
      * @return boolean
      * @throws
      **/
-    private boolean processPaytypeDetail(String url,String day,String date ) {
+    private boolean processPaytypeDetail(String conStr,String day,String date ) {
         String sql = "SELECT NUMBER,sum(Qty*OPRICE) as receivable,max(DATE) as Saledate,min(TIME) as start_time FROM CTI.dbf group by NUMBER";
         logger.info("sql=>" + sql);
         Connection con = null;
         Connection con2 = null;
         try {
-            con = EodGetConn.getGc().getCon(url);
-            con2 = EodGetConn.getGc().getCon(url);
+            con = EodGetConn.getGc().getCon(conStr);
+            con2 = EodGetConn.getGc().getCon(conStr);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -678,6 +687,7 @@ public class UserServiceImpl implements UserService {
 
 
             SimpleDateFormat sdf3 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            SimpleDateFormat sdf8 = new SimpleDateFormat("yyyy-MM-dd");
             // 创建Date对象，表示当前时间
             Date now = new Date();
             // 调用format()方法，将日期转换为字符串并输出
@@ -710,7 +720,9 @@ public class UserServiceImpl implements UserService {
                 paytypeDetail.setStore_id("");
                 paytypeDetail.setStore_name("");
                 paytypeDetail.setB_date(Saledate);
-                paytypeDetail.setSerial(date+NUMBER);
+                DecimalFormat g1=new DecimalFormat("00000");
+                String startZeroStr = g1.format(Integer.valueOf(NUMBER));
+                paytypeDetail.setSerial(date+startZeroStr);
                 paytypeDetail.setStart_time(Saledate+" "+start_time);
                 paytypeDetail.setEnd_time(Saledate+" "+end_time);
                 paytypeDetail.setPaytype("现金");
@@ -758,7 +770,7 @@ public class UserServiceImpl implements UserService {
                     "    ],\n" +
                     "    \"tableName\": \"Paytype Detail\"\n" +
                     "}";
-            return apiDataStr(param);
+            return apiDataStr(sdf8.format(now),"_Paytype_Detail",param);
         }catch (SQLException ex) {
             ///错误处理
             logger.info(ex.getMessage());
@@ -781,14 +793,14 @@ public class UserServiceImpl implements UserService {
      * @return boolean
      * @throws
      **/
-    private boolean processDiscountDetail(String url,String day ,String date ) {
+    private boolean processDiscountDetail(String conStr,String day ,String date ) {
         String sql = "SELECT NUMBER,sum(Qty*OPRICE) as receivable,max(DATE) as Saledate,min(TIME) as start_time FROM CTI.dbf group by NUMBER";
         logger.info("sql=>" + sql);
         Connection con = null;
         Connection con2 = null;
         try {
-            con = EodGetConn.getGc().getCon(url);
-            con2 = EodGetConn.getGc().getCon(url);
+            con = EodGetConn.getGc().getCon(conStr);
+            con2 = EodGetConn.getGc().getCon(conStr);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -805,6 +817,7 @@ public class UserServiceImpl implements UserService {
             DiscountDetail discountDetail = new DiscountDetail();
 
             SimpleDateFormat sdf3 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            SimpleDateFormat sdf8 = new SimpleDateFormat("yyyy-MM-dd");
             // 创建Date对象，表示当前时间
             Date now = new Date();
             // 调用format()方法，将日期转换为字符串并输出
@@ -837,7 +850,9 @@ public class UserServiceImpl implements UserService {
                 discountDetail.setStore_id("");
                 discountDetail.setStore_name("");
                 discountDetail.setB_date(Saledate);
-                discountDetail.setSerial(date+NUMBER);
+                DecimalFormat g1=new DecimalFormat("00000");
+                String startZeroStr = g1.format(Integer.valueOf(NUMBER));
+                discountDetail.setSerial(date+startZeroStr);
                 discountDetail.setStart_time(Saledate+" "+start_time);
                 discountDetail.setEnd_time(Saledate+" "+end_time);
                 discountDetail.setDiscount_type("优惠折扣");
@@ -877,7 +892,7 @@ public class UserServiceImpl implements UserService {
                     "        \"discount_type\",\n" +
                     "        \"discount_amount\",\n" +
                     "        \"time\",\n" +
-                    "        \"refresh_time\",\n" +
+                    "        \"refresh_time\"\n" +
                     "    ],\n" +
                     "    \"keyCol\": \"store_id,serial,discount_type\",\n" +
                     "    \"records\": [\n" +
@@ -885,7 +900,7 @@ public class UserServiceImpl implements UserService {
                     "    ],\n" +
                     "    \"tableName\": \"Discount Detail\"\n" +
                     "}";
-            return apiDataStr(param);
+            return apiDataStr(sdf8.format(now),"_Discount_Detail",param);
         }catch (SQLException ex) {
             ///错误处理
             logger.info(ex.getMessage());
@@ -896,9 +911,9 @@ public class UserServiceImpl implements UserService {
         return false;
     }
 
-    public boolean apiDataStr(String param){
+    public boolean apiDataStr(String dayStr,String table,String param){
         logger.info("apiDataStr(String param)=>"+param);
-        if(true){
+        if(false){
             return apiData(param);
         }
         //String url = "/api/data/str";
@@ -920,12 +935,16 @@ public class UserServiceImpl implements UserService {
             e.printStackTrace();
         }
         HttpEntity<String> httpEntity = new HttpEntity<>(JSON.toJSONString(map), headers);
-        String result = restTemplate.postForObject(urlStr, httpEntity, String.class);
+        String result = restTemplate.postForObject(urlHttpStr, httpEntity, String.class);
 
         Result result1 = JSON.parseObject(result, Result.class);
 
         logger.info("apiDataStr结果=>" + result);
         logger.info("apiDataStr结果=>" + result1.isSuccess());
+        if(result1.isSuccess()){
+            AppendContentToFile.method2(dayStr+table+"_log.txt",param);
+            AppendContentToFile.method4(table+"_update_date.txt",dayStr);
+        }
         return result1.isSuccess();
     }
 
@@ -945,7 +964,7 @@ public class UserServiceImpl implements UserService {
             MultiValueMap<String, Object> param = new LinkedMultiValueMap<>();
             param.add("file", resource);
             param.add("corporationCode", RSAUtil.encrypt(RSAUtil.loadPublicKey(publicKeyStr),corporationCode.getBytes()));
-            String result = rest.postForObject(url, param, String.class);
+            String result = rest.postForObject(urlHttpZip, param, String.class);
             file.delete();
             Result result1 = JSON.parseObject(result, Result.class);
 
