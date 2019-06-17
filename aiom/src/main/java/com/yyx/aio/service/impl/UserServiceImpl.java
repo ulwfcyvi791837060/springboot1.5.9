@@ -330,7 +330,13 @@ public class UserServiceImpl implements UserService {
                         "    ],\n" +
                         "    \"tableName\": \"Summary\"\n" +
                         "}";
-                return apiDataStr(sdf8.format(now),"_Summary",param);
+                boolean summary1 = apiDataStr(sdf8.format(now), "_Summary", param);
+                if(summary1){
+                    //再加点日志，表二的数据日志，加一条汇总的日志：某天的应收总额，实收总额，优惠总额。
+                    String log = "应收总额="+summary.getsReceivable()+"，实收总额="+summary.getsRealIncome()+"，优惠总额="+summary.getsDiscountTotal()+"";
+                    AppendContentToFile.method2(sdf8.format(now)+"_Summary_and_Business_"+"log.txt",sdf3.format(new Date())+"_Summary==>"+log);
+                }
+                return summary1;
             }
         }catch (SQLException ex) {
             ///错误处理
@@ -380,6 +386,11 @@ public class UserServiceImpl implements UserService {
             // 调用format()方法，将日期转换为字符串并输出
             StringBuilder recordsSb = new StringBuilder();
 
+            //某天的应收总额，实收总额，优惠总额。
+            double receivableSum=0;
+            double realIncomeSum=0;
+            double discountSum=0;
+            DecimalFormat    df   = new DecimalFormat("######0.00");
             while (rs.next()) {
                 //start_time ，end_time 只有时间，，你加上日期
                 //优惠金额*=应收金额* -实际收入* receivable-real_income
@@ -428,11 +439,16 @@ public class UserServiceImpl implements UserService {
                 business.setEnd_time(Saledate+" "+end_time);
                 business.setReceivable(Double.parseDouble(receivable));
                 business.setReal_income(Double.parseDouble(real_income));
-                business.setDiscount_amount(Double.parseDouble(receivable)-Double.parseDouble(real_income));
+                double v = Double.parseDouble(receivable) - Double.parseDouble(real_income);
+                business.setDiscount_amount(Double.parseDouble(df.format(v)));
                 business.setIs_chargeback("否");
                 business.setChargeback(0.0D);
                 business.setTime(sdf3.format(now));
                 business.setRefresh_time(sdf3.format(now));
+
+                receivableSum=receivableSum+Double.parseDouble(receivable);
+                realIncomeSum=realIncomeSum+Double.parseDouble(real_income);
+                discountSum=discountSum+v;
 
                 if(recordsSb.length()>0){
                     recordsSb.append(",");
@@ -479,7 +495,15 @@ public class UserServiceImpl implements UserService {
                     "    \"tableName\": \"Business\"\n" +
                     "}";
 
-            return apiDataStr(sdf8.format(now),"_Business",param);
+            boolean business1 = apiDataStr(sdf8.format(now), "_Business", param);
+            if(business1){
+                //再加点日志，表二的数据日志，加一条汇总的日志：某天的应收总额，实收总额，优惠总额。
+                String log = "应收总额="+df.format(receivableSum)+"，实收总额="+df.format(realIncomeSum)+"，优惠总额="+df.format(discountSum)+"";
+                AppendContentToFile.method2(sdf8.format(now)+"_Summary_and_Business_"+"log.txt",sdf3.format(new Date())+"_Business==>"+log);
+            }
+
+            return business1;
+
         }catch (SQLException ex) {
             ///错误处理
             logger.info(ex.getMessage());

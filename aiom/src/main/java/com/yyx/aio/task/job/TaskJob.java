@@ -57,11 +57,7 @@ public class TaskJob {
         log.info("【job1】开始执行：{}", DateUtil.formatDateTime(new Date()));
     }*/
 
-    /**
-     * 从启动时间开始，间隔 2s 执行
-     * 固定间隔时间
-     */
-    @Scheduled(fixedRate = 5*60*1000)
+    @Scheduled(cron="${agreeAccTask.time}")
     public void job2() {
         SimpleDateFormat sdf3 = new SimpleDateFormat("yyyyMMdd");
         // 创建Date对象，表示当前时间
