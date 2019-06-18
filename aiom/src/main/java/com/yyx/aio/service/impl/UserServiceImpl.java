@@ -126,15 +126,66 @@ public class UserServiceImpl implements UserService {
 
                 boolean b1 = processSummary(eodDataBaseUrl+date, day);
                 if(!b1){
-                    logger.info("summary上传失败");
+                    logger.info("summary上传失败_"+eodDataBaseUrl+date);
                     result.setSuccess(false);
-                    result.setMsg(result.getMsg()+","+"summary上传失败");
+                    result.setMsg(result.getMsg()+","+"summary上传失败_"+eodDataBaseUrl+date);
                     //result =b1;
                     //return result;
                 }else{
-                    logger.info("summary上传成功");
-                    result.setMsg(result.getMsg()+","+"summary上传成功");
+                    logger.info("summary上传成功_"+eodDataBaseUrl+date);
+                    result.setMsg(result.getMsg()+","+"summary上传成功_"+eodDataBaseUrl+date);
                 }
+
+
+                boolean b2 = processBusiness(eodDataBaseUrl+date, day,date);
+                if(!b2){
+                    logger.info("Business上传失败_"+eodDataBaseUrl+date);
+                    result.setSuccess(false);
+                    result.setMsg(result.getMsg()+","+"Business上传失败_"+eodDataBaseUrl+date);
+                    //result =b1;
+                    //return result;
+                }else{
+                    logger.info("Business上传成功_"+eodDataBaseUrl+date);
+                    result.setMsg(result.getMsg()+","+"Business上传成功_"+eodDataBaseUrl+date);
+                }
+                logger.info("正在上传==>"+dirFile);
+                boolean b0 = processBillDetail(eodDataBaseUrl+date, day,date);
+                if(!b0){
+                    logger.info("BillDetail上传失败_"+eodDataBaseUrl+date);
+                    result.setSuccess(false);
+                    result.setMsg(result.getMsg()+","+"BillDetail上传失败_"+eodDataBaseUrl+date);
+                    //result =b1;
+                    //return result;
+                }else{
+                    logger.info("BillDetail上传成功_"+eodDataBaseUrl+date);
+                    result.setMsg(result.getMsg()+","+"BillDetail上传成功_"+eodDataBaseUrl+date);
+                }
+                logger.info("正在上传==>"+dirFile);
+                boolean b3 = processPaytypeDetail(eodDataBaseUrl+date, day,date);
+                if(!b3){
+                    logger.info("PaytypeDetail上传失败_"+eodDataBaseUrl+date);
+                    result.setSuccess(false);
+                    result.setMsg(result.getMsg()+","+"PaytypeDetail上传失败_"+eodDataBaseUrl+date);
+                    //result =b1;
+                    //return result;
+                }else{
+                    logger.info("PaytypeDetail上传成功_"+eodDataBaseUrl+date);
+                    result.setMsg(result.getMsg()+","+"PaytypeDetail上传成功_"+eodDataBaseUrl+date);
+                }
+                logger.info("正在上传==>"+dirFile);
+                boolean b4 = processDiscountDetail(eodDataBaseUrl+date, day,date);
+                if(!b4){
+                    logger.info("DiscountDetail上传失败_"+eodDataBaseUrl+date);
+                    result.setSuccess(false);
+                    result.setMsg(result.getMsg()+","+"DiscountDetail上传失败_"+eodDataBaseUrl+date);
+                    //result =b1;
+                    //return result;
+                }else{
+                    logger.info("DiscountDetail上传成功_"+eodDataBaseUrl+date);
+                    result.setMsg(result.getMsg()+","+"DiscountDetail上传成功_"+eodDataBaseUrl+date);
+                }
+                return result;
+
             }else{
                 logger.info(dirFile+"不存在");
                 result.setMsg(result.getMsg()+","+dirFile+"不存在");
@@ -168,14 +219,14 @@ public class UserServiceImpl implements UserService {
 
                 boolean b2 = processBusiness(conStr, day,date);
                 if(!b2){
-                    logger.info("Business上传失败");
+                    logger.info("Business上传失败_"+conStr);
                     result.setSuccess(false);
-                    result.setMsg(result.getMsg()+","+"Business上传失败");
+                    result.setMsg(result.getMsg()+","+"Business上传失败_"+conStr);
                     //result =b1;
                     //return result;
                 }else{
-                    logger.info("Business上传成功");
-                    result.setMsg(result.getMsg()+","+"Business上传成功");
+                    logger.info("Business上传成功_"+conStr);
+                    result.setMsg(result.getMsg()+","+"Business上传成功_"+conStr);
                 }
                 logger.info("正在上传==>"+dirFile);
                 if(auto){
@@ -185,14 +236,14 @@ public class UserServiceImpl implements UserService {
                 }
                 boolean b1 = processBillDetail(conStr, day,date);
                 if(!b1){
-                    logger.info("BillDetail上传失败");
+                    logger.info("BillDetail上传失败_"+conStr);
                     result.setSuccess(false);
-                    result.setMsg(result.getMsg()+","+"BillDetail上传失败");
+                    result.setMsg(result.getMsg()+","+"BillDetail上传失败_"+conStr);
                     //result =b1;
                     //return result;
                 }else{
-                    logger.info("BillDetail上传成功");
-                    result.setMsg(result.getMsg()+","+"BillDetail上传成功");
+                    logger.info("BillDetail上传成功_"+conStr);
+                    result.setMsg(result.getMsg()+","+"BillDetail上传成功_"+conStr);
                 }
                 logger.info("正在上传==>"+dirFile);
                 if(auto){
@@ -202,14 +253,14 @@ public class UserServiceImpl implements UserService {
                 }
                 boolean b3 = processPaytypeDetail(conStr, day,date);
                 if(!b3){
-                    logger.info("PaytypeDetail上传失败");
+                    logger.info("PaytypeDetail上传失败_"+conStr);
                     result.setSuccess(false);
-                    result.setMsg(result.getMsg()+","+"PaytypeDetail上传失败");
+                    result.setMsg(result.getMsg()+","+"PaytypeDetail上传失败_"+conStr);
                     //result =b1;
                     //return result;
                 }else{
-                    logger.info("PaytypeDetail上传成功");
-                    result.setMsg(result.getMsg()+","+"PaytypeDetail上传成功");
+                    logger.info("PaytypeDetail上传成功_"+conStr);
+                    result.setMsg(result.getMsg()+","+"PaytypeDetail上传成功_"+conStr);
                 }
                 logger.info("正在上传==>"+dirFile);
                 if(auto){
@@ -219,14 +270,14 @@ public class UserServiceImpl implements UserService {
                 }
                 boolean b4 = processDiscountDetail(conStr, day,date);
                 if(!b4){
-                    logger.info("DiscountDetail上传失败");
+                    logger.info("DiscountDetail上传失败_"+conStr);
                     result.setSuccess(false);
-                    result.setMsg(result.getMsg()+","+"DiscountDetail上传失败");
+                    result.setMsg(result.getMsg()+","+"DiscountDetail上传失败_"+conStr);
                     //result =b1;
                     //return result;
                 }else{
-                    logger.info("DiscountDetail上传成功");
-                    result.setMsg(result.getMsg()+","+"DiscountDetail上传成功");
+                    logger.info("DiscountDetail上传成功_"+conStr);
+                    result.setMsg(result.getMsg()+","+"DiscountDetail上传成功_"+conStr);
                 }
 
             }else{
@@ -279,64 +330,66 @@ public class UserServiceImpl implements UserService {
                 String sRealIncome = rs.getString("net_AMOUNT");
                 logger.info("net_AMOUNT:" + sRealIncome);
 
-                summary.setLocationId("");
-                summary.setStoreId("");
-                summary.setStoreName("");
-                summary.setbDate("");
-                summary.setsReceivable(0.0D);
-                summary.setsRealIncome(Double.parseDouble(sRealIncome));
-                summary.setsBillNum(0.0D);
-                summary.setsDiscountTotal(0.0D);
-                summary.setsDiscountNum(0.0D);
-                summary.setsChargeback(0.0D);
-                summary.setsChargebackNum(0.0D);
-                summary.setsTime(sdf3.format(now));
-                summary.setsRefreshTime(sdf3.format(now));
+                if(sRealIncome!=null&&!"".equals(sRealIncome)){
+                    summary.setLocationId("");
+                    summary.setStoreId("");
+                    summary.setStoreName("");
+                    summary.setbDate("");
+                    summary.setsReceivable(0.0D);
+                    summary.setsRealIncome(Double.parseDouble(sRealIncome));
+                    summary.setsBillNum(0.0D);
+                    summary.setsDiscountTotal(0.0D);
+                    summary.setsDiscountNum(0.0D);
+                    summary.setsChargeback(0.0D);
+                    summary.setsChargebackNum(0.0D);
+                    summary.setsTime(sdf3.format(now));
+                    summary.setsRefreshTime(sdf3.format(now));
 
-                String param="";
-                param = "{\n" +
-                        "    \"columnNames\": [\n" +
-                        "        \"location_id\",\n" +  //商位
-                        "        \"store_id\",\n" +     //主键 1
-                        "        \"store_name\",\n" +   //门店
-                        "        \"b_date\",\n" + //主键 2 营业日 2017-01-21
-                        "        \"s_receivable\",\n" +
-                        "        \"s_real_income\",\n" +
-                        "        \"s_bill_num\",\n" +
-                        "        \"s_discount_total\",\n" +
-                        "        \"s_discount_num\",\n" +
-                        "        \"s_chargeback\",\n" +
-                        "        \"s_chargeback_num\",\n" +
-                        "        \"s_time\",\n" +
-                        "        \"s_refresh_time\"\n" +
-                        "    ],\n" +
-                        "    \"keyCol\": \"store_id,b_date\",\n" +
-                        "    \"records\": [\n" +
-                        "        [\n" +
-                        "            \""+locationId+"\",\n" +
-                        "            \""+storeId+"\",\n" +
-                        "            \""+storeName+"\",\n" +
-                        "            \""+day+" 00:00:00\",\n" +
-                        "            \""+summary.getsReceivable()+"\",\n" +
-                        "            \""+summary.getsRealIncome()+"\",\n" +
-                        "            \""+summary.getsBillNum()+"\",\n" +
-                        "            \""+summary.getsDiscountTotal()+"\",\n" +
-                        "            \""+summary.getsDiscountNum()+"\",\n" +
-                        "            \""+summary.getsChargeback()+"\",\n" +
-                        "            \""+summary.getsChargebackNum()+"\",\n" +
-                        "            \""+summary.getsTime()+"\",\n" +
-                        "            \""+summary.getsRefreshTime()+"\"\n" +
-                        "        ]\n" +
-                        "    ],\n" +
-                        "    \"tableName\": \"Summary\"\n" +
-                        "}";
-                boolean summary1 = apiDataStr(sdf8.format(now), "_Summary", param);
-                if(summary1){
-                    //再加点日志，表二的数据日志，加一条汇总的日志：某天的应收总额，实收总额，优惠总额。
-                    String log = "应收总额="+summary.getsReceivable()+"，实收总额="+summary.getsRealIncome()+"，优惠总额="+summary.getsDiscountTotal()+"";
-                    AppendContentToFile.method2(sdf8.format(now)+"_Summary_and_Business_"+"log.txt",sdf3.format(new Date())+"_Summary==>"+log);
+                    String param="";
+                    param = "{\n" +
+                            "    \"columnNames\": [\n" +
+                            "        \"location_id\",\n" +  //商位
+                            "        \"store_id\",\n" +     //主键 1
+                            "        \"store_name\",\n" +   //门店
+                            "        \"b_date\",\n" + //主键 2 营业日 2017-01-21
+                            "        \"s_receivable\",\n" +
+                            "        \"s_real_income\",\n" +
+                            "        \"s_bill_num\",\n" +
+                            "        \"s_discount_total\",\n" +
+                            "        \"s_discount_num\",\n" +
+                            "        \"s_chargeback\",\n" +
+                            "        \"s_chargeback_num\",\n" +
+                            "        \"s_time\",\n" +
+                            "        \"s_refresh_time\"\n" +
+                            "    ],\n" +
+                            "    \"keyCol\": \"store_id,b_date\",\n" +
+                            "    \"records\": [\n" +
+                            "        [\n" +
+                            "            \""+locationId+"\",\n" +
+                            "            \""+storeId+"\",\n" +
+                            "            \""+storeName+"\",\n" +
+                            "            \""+day+" 00:00:00\",\n" +
+                            "            \""+summary.getsReceivable()+"\",\n" +
+                            "            \""+summary.getsRealIncome()+"\",\n" +
+                            "            \""+summary.getsBillNum()+"\",\n" +
+                            "            \""+summary.getsDiscountTotal()+"\",\n" +
+                            "            \""+summary.getsDiscountNum()+"\",\n" +
+                            "            \""+summary.getsChargeback()+"\",\n" +
+                            "            \""+summary.getsChargebackNum()+"\",\n" +
+                            "            \""+summary.getsTime()+"\",\n" +
+                            "            \""+summary.getsRefreshTime()+"\"\n" +
+                            "        ]\n" +
+                            "    ],\n" +
+                            "    \"tableName\": \"Summary\"\n" +
+                            "}";
+                    boolean summary1 = apiDataStr(sdf8.format(now), "_Summary", param);
+                    if(summary1){
+                        //再加点日志，表二的数据日志，加一条汇总的日志：某天的应收总额，实收总额，优惠总额。
+                        String log = conStr+"_summary上传成功,应收总额="+summary.getsReceivable()+"，实收总额="+summary.getsRealIncome()+"，优惠总额="+summary.getsDiscountTotal()+"";
+                        AppendContentToFile.method2(sdf8.format(now)+"_Summary_and_Business_"+"log.txt",sdf3.format(new Date())+"_Summary==>"+log);
+                    }
+                    return summary1;
                 }
-                return summary1;
             }
         }catch (SQLException ex) {
             ///错误处理
@@ -384,7 +437,7 @@ public class UserServiceImpl implements UserService {
             // 创建Date对象，表示当前时间
             Date now = new Date();
             // 调用format()方法，将日期转换为字符串并输出
-            StringBuilder recordsSb = new StringBuilder();
+            StringBuffer recordsSb = new StringBuffer();
 
             //某天的应收总额，实收总额，优惠总额。
             double receivableSum=0;
@@ -471,39 +524,40 @@ public class UserServiceImpl implements UserService {
                         "        ]\n" );
 
             }
-            String param = "{\n" +
-                    "    \"columnNames\": [\n" +
-                    "        \"location_id\",\n" +
-                    "        \"store_id\",\n" +
-                    "        \"store_name\",\n" +
-                    "        \"b_date\",\n" +
-                    "        \"serial\",\n" +
-                    "        \"start_time\",\n" +
-                    "        \"end_time\",\n" +
-                    "        \"receivable\",\n" +
-                    "        \"real_income\",\n" +
-                    "        \"discount_amount\",\n" +
-                    "        \"is_chargeback\",\n" +
-                    "        \"chargeback\",\n" +
-                    "        \"time\",\n" +
-                    "        \"refresh_time\"\n" +
-                    "    ],\n" +
-                    "    \"keyCol\": \"store_id,serial\",\n" +
-                    "    \"records\": [\n"
-                    +recordsSb.toString()+
-                    "    ],\n" +
-                    "    \"tableName\": \"Business\"\n" +
-                    "}";
 
-            boolean business1 = apiDataStr(sdf8.format(now), "_Business", param);
-            if(business1){
-                //再加点日志，表二的数据日志，加一条汇总的日志：某天的应收总额，实收总额，优惠总额。
-                String log = "应收总额="+df.format(receivableSum)+"，实收总额="+df.format(realIncomeSum)+"，优惠总额="+df.format(discountSum)+"";
-                AppendContentToFile.method2(sdf8.format(now)+"_Summary_and_Business_"+"log.txt",sdf3.format(new Date())+"_Business==>"+log);
+            if(recordsSb!=null&&!"".equals(recordsSb)){
+                String param = "{\n" +
+                        "    \"columnNames\": [\n" +
+                        "        \"location_id\",\n" +
+                        "        \"store_id\",\n" +
+                        "        \"store_name\",\n" +
+                        "        \"b_date\",\n" +
+                        "        \"serial\",\n" +
+                        "        \"start_time\",\n" +
+                        "        \"end_time\",\n" +
+                        "        \"receivable\",\n" +
+                        "        \"real_income\",\n" +
+                        "        \"discount_amount\",\n" +
+                        "        \"is_chargeback\",\n" +
+                        "        \"chargeback\",\n" +
+                        "        \"time\",\n" +
+                        "        \"refresh_time\"\n" +
+                        "    ],\n" +
+                        "    \"keyCol\": \"store_id,serial\",\n" +
+                        "    \"records\": [\n"
+                        +recordsSb.toString()+
+                        "    ],\n" +
+                        "    \"tableName\": \"Business\"\n" +
+                        "}";
+
+                boolean business1 = apiDataStr(sdf8.format(now), "_Business", param);
+                if(business1){
+                    //再加点日志，表二的数据日志，加一条汇总的日志：某天的应收总额，实收总额，优惠总额。
+                    String log = conStr+"_Business上传成功,应收总额="+df.format(receivableSum)+"，实收总额="+df.format(realIncomeSum)+"，优惠总额="+df.format(discountSum)+"";
+                    AppendContentToFile.method2(sdf8.format(now)+"_Summary_and_Business_"+"log.txt",sdf3.format(new Date())+"_Business==>"+log);
+                }
+                return business1;
             }
-
-            return business1;
-
         }catch (SQLException ex) {
             ///错误处理
             logger.info(ex.getMessage());
@@ -552,7 +606,7 @@ public class UserServiceImpl implements UserService {
             // 创建Date对象，表示当前时间
             Date now = new Date();
             // 调用format()方法，将日期转换为字符串并输出
-            StringBuilder recordsSb = new StringBuilder();
+            StringBuffer recordsSb = new StringBuffer();
             while (rs.next()) {
 
                 //NUMBER,receivable,Saledate,start_time,real_income,end_time
@@ -634,38 +688,43 @@ public class UserServiceImpl implements UserService {
 
 
             }
-            String param="";
-            param = "{\n" +
-                    "    \"columnNames\": [\n" +
-                    "        \"location_id\",\n" +
-                    "        \"store_id\",\n" +
-                    "        \"store_name\",\n" +
-                    "        \"b_date\",\n" +
-                    "        \"serial\",\n" +
-                    "        \"start_time\",\n" +
-                    "        \"end_time\",\n" +
-                    "        \"item_name\",\n" +
-                    "        \"item_category\",\n" +
-                    "        \"item_sub_category\",\n" +
-                    "        \"original_price\",\n" +
-                    "        \"actual_price\",\n" +
-                    "        \"item_num\",\n" +
-                    "        \"receivable\",\n" +
-                    "        \"real_income\",\n" +
-                    "        \"disc_money\",\n" +
-                    "        \"is_chargeback\",\n" +
-                    "        \"chargeback_price\",\n" +
-                    "        \"chargeback_num\",\n" +
-                    "        \"time\",\n" +
-                    "        \"refresh_time\"\n" +
-                    "    ],\n" +
-                    "    \"keyCol\": \"store_id,serial,item_name\",\n" +
-                    "    \"records\": [\n" +
-                    recordsSb.toString()+
-                    "    ],\n" +
-                    "    \"tableName\": \"Bill Detail\"\n" +
-                    "}";
-            return apiDataStr(sdf8.format(now),"_Bill_Detail",param);
+
+            if(recordsSb!=null&&!"".equals(recordsSb)){
+                String param="";
+                param = "{\n" +
+                        "    \"columnNames\": [\n" +
+                        "        \"location_id\",\n" +
+                        "        \"store_id\",\n" +
+                        "        \"store_name\",\n" +
+                        "        \"b_date\",\n" +
+                        "        \"serial\",\n" +
+                        "        \"start_time\",\n" +
+                        "        \"end_time\",\n" +
+                        "        \"item_name\",\n" +
+                        "        \"item_category\",\n" +
+                        "        \"item_sub_category\",\n" +
+                        "        \"original_price\",\n" +
+                        "        \"actual_price\",\n" +
+                        "        \"item_num\",\n" +
+                        "        \"receivable\",\n" +
+                        "        \"real_income\",\n" +
+                        "        \"disc_money\",\n" +
+                        "        \"is_chargeback\",\n" +
+                        "        \"chargeback_price\",\n" +
+                        "        \"chargeback_num\",\n" +
+                        "        \"time\",\n" +
+                        "        \"refresh_time\"\n" +
+                        "    ],\n" +
+                        "    \"keyCol\": \"store_id,serial,item_name\",\n" +
+                        "    \"records\": [\n" +
+                        recordsSb.toString()+
+                        "    ],\n" +
+                        "    \"tableName\": \"Bill Detail\"\n" +
+                        "}";
+                return apiDataStr(sdf8.format(now),"_Bill_Detail",param);
+            }
+
+
         }catch (SQLException ex) {
             ///错误处理
             logger.info(ex.getMessage());
@@ -715,7 +774,7 @@ public class UserServiceImpl implements UserService {
             // 创建Date对象，表示当前时间
             Date now = new Date();
             // 调用format()方法，将日期转换为字符串并输出
-            StringBuilder recordsSb = new StringBuilder();
+            StringBuffer recordsSb = new StringBuffer();
             while (rs.next()) {
 
                 //NUMBER,receivable,Saledate,start_time,real_income,end_time
@@ -773,28 +832,33 @@ public class UserServiceImpl implements UserService {
 
 
             }
-            String param="";
-            param = "{\n" +
-                    "    \"columnNames\": [\n" +
-                    "        \"location_id\",\n" +
-                    "        \"store_id\",\n" +
-                    "        \"store_name\",\n" +
-                    "        \"b_date\",\n" +
-                    "        \"serial\",\n" +
-                    "        \"start_time\",\n" +
-                    "        \"end_time\",\n" +
-                    "        \"paytype\",\n" +
-                    "        \"paytype_income\",\n" +
-                    "        \"time\",\n" +
-                    "        \"refresh_time\"\n" +
-                    "    ],\n" +
-                    "    \"keyCol\": \"store_id,serial,paytype\",\n" +
-                    "    \"records\": [\n" +
-                    recordsSb.toString()+
-                    "    ],\n" +
-                    "    \"tableName\": \"Paytype Detail\"\n" +
-                    "}";
-            return apiDataStr(sdf8.format(now),"_Paytype_Detail",param);
+
+            if(recordsSb!=null&&!"".equals(recordsSb)){
+                String param="";
+                param = "{\n" +
+                        "    \"columnNames\": [\n" +
+                        "        \"location_id\",\n" +
+                        "        \"store_id\",\n" +
+                        "        \"store_name\",\n" +
+                        "        \"b_date\",\n" +
+                        "        \"serial\",\n" +
+                        "        \"start_time\",\n" +
+                        "        \"end_time\",\n" +
+                        "        \"paytype\",\n" +
+                        "        \"paytype_income\",\n" +
+                        "        \"time\",\n" +
+                        "        \"refresh_time\"\n" +
+                        "    ],\n" +
+                        "    \"keyCol\": \"store_id,serial,paytype\",\n" +
+                        "    \"records\": [\n" +
+                        recordsSb.toString()+
+                        "    ],\n" +
+                        "    \"tableName\": \"Paytype Detail\"\n" +
+                        "}";
+                return apiDataStr(sdf8.format(now),"_Paytype_Detail",param);
+            }
+
+
         }catch (SQLException ex) {
             ///错误处理
             logger.info(ex.getMessage());
@@ -845,7 +909,7 @@ public class UserServiceImpl implements UserService {
             // 创建Date对象，表示当前时间
             Date now = new Date();
             // 调用format()方法，将日期转换为字符串并输出
-            StringBuilder recordsSb = new StringBuilder();
+            StringBuffer recordsSb = new StringBuffer();
             while (rs.next()) {
 
                 //NUMBER,receivable,Saledate,start_time,real_income,end_time
@@ -903,28 +967,33 @@ public class UserServiceImpl implements UserService {
 
 
             }
-            String param="";
-            param = "{\n" +
-                    "    \"columnNames\": [\n" +
-                    "        \"location_id\",\n" +
-                    "        \"store_id\",\n" +
-                    "        \"store_name\",\n" +
-                    "        \"b_date\",\n" +
-                    "        \"serial\",\n" +
-                    "        \"start_time\",\n" +
-                    "        \"end_time\",\n" +
-                    "        \"discount_type\",\n" +
-                    "        \"discount_amount\",\n" +
-                    "        \"time\",\n" +
-                    "        \"refresh_time\"\n" +
-                    "    ],\n" +
-                    "    \"keyCol\": \"store_id,serial,discount_type\",\n" +
-                    "    \"records\": [\n" +
-                    recordsSb.toString()+
-                    "    ],\n" +
-                    "    \"tableName\": \"Discount Detail\"\n" +
-                    "}";
-            return apiDataStr(sdf8.format(now),"_Discount_Detail",param);
+
+            if(recordsSb!=null&&!"".equals(recordsSb)){
+                String param="";
+                param = "{\n" +
+                        "    \"columnNames\": [\n" +
+                        "        \"location_id\",\n" +
+                        "        \"store_id\",\n" +
+                        "        \"store_name\",\n" +
+                        "        \"b_date\",\n" +
+                        "        \"serial\",\n" +
+                        "        \"start_time\",\n" +
+                        "        \"end_time\",\n" +
+                        "        \"discount_type\",\n" +
+                        "        \"discount_amount\",\n" +
+                        "        \"time\",\n" +
+                        "        \"refresh_time\"\n" +
+                        "    ],\n" +
+                        "    \"keyCol\": \"store_id,serial,discount_type\",\n" +
+                        "    \"records\": [\n" +
+                        recordsSb.toString()+
+                        "    ],\n" +
+                        "    \"tableName\": \"Discount Detail\"\n" +
+                        "}";
+                return apiDataStr(sdf8.format(now),"_Discount_Detail",param);
+            }
+
+
         }catch (SQLException ex) {
             ///错误处理
             logger.info(ex.getMessage());
