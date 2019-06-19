@@ -84,6 +84,7 @@ public class UserServiceImpl implements UserService {
     @Value("${dbf.store.FBPosDataBaseUrl}")
     private String fBPosDataBaseUrl;
 
+    DecimalFormat    df   = new DecimalFormat("######0.00");
 
     @Override
     public User getByLoginName(String loginName) {
@@ -112,7 +113,7 @@ public class UserServiceImpl implements UserService {
         String d = date.substring(6,8 );
         String day =y+"-"+m+"-"+d;
         String dirFile=eodDataBaseUrl+"\\"+date;
-        logger.info("输出：");
+        logger.info("输出：dirFile==>"+dirFile);
         try {
 
             boolean b = dirExists(new File(dirFile));
@@ -306,20 +307,47 @@ public class UserServiceImpl implements UserService {
         String sql = "SELECT  sum(AMOUNT) as net_AMOUNT FROM CTP.dbf where not isnull(AMOUNT) AND (PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES))";
         logger.info("sql=>" + sql);
 
+        String sql2 = "SELECT  sum(Qty*OPRICE) as sale_AMOUNT FROM CTI.dbf";
+        logger.info("sql2=>" + sql2);
+
         Connection con = null;
+        Connection con2 = null;
         try {
             con = EodGetConn.getGc().getCon(conStr);
+            con2 = EodGetConn.getGc().getCon(conStr);
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
         Statement st = null;
+        Statement st2 = null;
         ResultSet rs = null;
+        ResultSet rs2 = null;
         try {
             st = con.createStatement();
+            st2 = con2.createStatement();
+
             rs = st.executeQuery(sql);
+            rs2 = st2.executeQuery(sql2);
+
+            /*表一：
+            应收总金额：
+            SELECT  sum(Qty*OPRICE) as sale_AMOUNT FROM CTI.dbf
+            表一，实收总金额：ＳＱＬ语句：
+            SELECT  sum(AMOUNT) as net_AMOUNT FROM CTP.dbf where not isnull(AMOUNT) AND (PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES))
+            表一  优惠总额=应收总额-实收总额*/
+
 
             Summary summary = new Summary();
+
+            while (rs2.next()) {
+                String sale_AMOUNT = rs2.getString("sale_AMOUNT").trim();
+                logger.info("sale_AMOUNT:" + sale_AMOUNT);
+                if(sale_AMOUNT!=null&&!"".equals(sale_AMOUNT)){
+                    summary.setsReceivable(Double.parseDouble(df.format(Double.parseDouble(sale_AMOUNT))));
+                }
+            }
+
             SimpleDateFormat sdf3 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             SimpleDateFormat sdf8 = new SimpleDateFormat("yyyy-MM-dd");
             // 创建Date对象，表示当前时间
@@ -327,7 +355,7 @@ public class UserServiceImpl implements UserService {
             // 调用format()方法，将日期转换为字符串并输出
             while (rs.next()) {
 
-                String sRealIncome = rs.getString("net_AMOUNT");
+                String sRealIncome = rs.getString("net_AMOUNT").trim();
                 logger.info("net_AMOUNT:" + sRealIncome);
 
                 if(sRealIncome!=null&&!"".equals(sRealIncome)){
@@ -335,10 +363,9 @@ public class UserServiceImpl implements UserService {
                     summary.setStoreId("");
                     summary.setStoreName("");
                     summary.setbDate("");
-                    summary.setsReceivable(0.0D);
-                    summary.setsRealIncome(Double.parseDouble(sRealIncome));
+                    summary.setsRealIncome(Double.parseDouble(df.format(Double.parseDouble(sRealIncome))));
                     summary.setsBillNum(0.0D);
-                    summary.setsDiscountTotal(0.0D);
+                    summary.setsDiscountTotal(Double.parseDouble(df.format(summary.getsReceivable()-summary.getsRealIncome())));
                     summary.setsDiscountNum(0.0D);
                     summary.setsChargeback(0.0D);
                     summary.setsChargebackNum(0.0D);
@@ -396,6 +423,7 @@ public class UserServiceImpl implements UserService {
             logger.info(ex.getMessage());
         }finally{
             EodGetConn.getGc().closeAll(rs,st,con);
+            EodGetConn.getGc().closeAll(rs2,st2,con2);
         }
         return false;
     }
@@ -443,7 +471,6 @@ public class UserServiceImpl implements UserService {
             double receivableSum=0;
             double realIncomeSum=0;
             double discountSum=0;
-            DecimalFormat    df   = new DecimalFormat("######0.00");
             while (rs.next()) {
                 //start_time ，end_time 只有时间，，你加上日期
                 //优惠金额*=应收金额* -实际收入* receivable-real_income
@@ -462,10 +489,10 @@ public class UserServiceImpl implements UserService {
                 自动上传，允许重复上传，，SQL可不用加条件，表二到表五每次可上传多条记录，，全部上传吧*/
 
                 //NUMBER,receivable,Saledate,start_time,real_income,end_time
-                String NUMBER = rs.getString("NUMBER");
-                String receivable = rs.getString("receivable");
-                String Saledate = rs.getString("Saledate");
-                String start_time = rs.getString("start_time");
+                String NUMBER = rs.getString("NUMBER").trim();
+                String receivable = rs.getString("receivable").trim();
+                String Saledate = rs.getString("Saledate").trim();
+                String start_time = rs.getString("start_time").trim();
 
                 sql="SELECT NUMBER,sum(AMOUNT) as real_income,max(TIME) as end_time FROM CTP.dbf where not isnull(AMOUNT) and " +
                         "NUMBER ="+NUMBER+" AND PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES) group by NUMBER \n";
@@ -475,8 +502,8 @@ public class UserServiceImpl implements UserService {
                 String real_income="";
                 String end_time="";
                 while (rs2.next()) {
-                    real_income = rs2.getString("real_income");
-                    end_time = rs2.getString("end_time");
+                    real_income = rs2.getString("real_income").trim();
+                    end_time = rs2.getString("end_time").trim();
                 }
 
 
@@ -610,10 +637,10 @@ public class UserServiceImpl implements UserService {
             while (rs.next()) {
 
                 //NUMBER,receivable,Saledate,start_time,real_income,end_time
-                String NUMBER = rs.getString("NUMBER");
-                String receivable = rs.getString("receivable");
-                String Saledate = rs.getString("Saledate");
-                String start_time = rs.getString("start_time");
+                String NUMBER = rs.getString("NUMBER").trim();
+                String receivable = rs.getString("receivable").trim();
+                String Saledate = rs.getString("Saledate").trim();
+                String start_time = rs.getString("start_time").trim();
 
                 /*表三和表二，SQL是一样的，
                 菜品名称 = 甜品
@@ -630,8 +657,8 @@ public class UserServiceImpl implements UserService {
                 String real_income="";
                 String end_time="";
                 while (rs2.next()) {
-                    real_income = rs2.getString("real_income");
-                    end_time = rs2.getString("end_time");
+                    real_income = rs2.getString("real_income").trim();
+                    end_time = rs2.getString("end_time").trim();
                 }
 
                 billDetail.setLocation_id("");
@@ -778,10 +805,10 @@ public class UserServiceImpl implements UserService {
             while (rs.next()) {
 
                 //NUMBER,receivable,Saledate,start_time,real_income,end_time
-                String NUMBER = rs.getString("NUMBER");
-                String receivable = rs.getString("receivable");
-                String Saledate = rs.getString("Saledate");
-                String start_time = rs.getString("start_time");
+                String NUMBER = rs.getString("NUMBER").trim();
+                String receivable = rs.getString("receivable").trim();
+                String Saledate = rs.getString("Saledate").trim();
+                String start_time = rs.getString("start_time").trim();
 
                 /*表四，也用表二的SQL ,
                         支付方式 = 现金
@@ -795,8 +822,8 @@ public class UserServiceImpl implements UserService {
                 String real_income="";
                 String end_time="";
                 while (rs2.next()) {
-                    real_income = rs2.getString("real_income");
-                    end_time = rs2.getString("end_time");
+                    real_income = rs2.getString("real_income").trim();
+                    end_time = rs2.getString("end_time").trim();
                 }
 
                 paytypeDetail.setLocation_id("");
@@ -913,10 +940,10 @@ public class UserServiceImpl implements UserService {
             while (rs.next()) {
 
                 //NUMBER,receivable,Saledate,start_time,real_income,end_time
-                String NUMBER = rs.getString("NUMBER");
-                String receivable = rs.getString("receivable");
-                String Saledate = rs.getString("Saledate");
-                String start_time = rs.getString("start_time");
+                String NUMBER = rs.getString("NUMBER").trim();
+                String receivable = rs.getString("receivable").trim();
+                String Saledate = rs.getString("Saledate").trim();
+                String start_time = rs.getString("start_time").trim();
 
                 sql="SELECT NUMBER,sum(AMOUNT) as real_income,max(TIME) as end_time FROM CTP.dbf where not isnull(AMOUNT) and " +
                         "NUMBER ="+NUMBER+" AND PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES) group by NUMBER \n";
@@ -926,8 +953,8 @@ public class UserServiceImpl implements UserService {
                 String real_income="";
                 String end_time="";
                 while (rs2.next()) {
-                    real_income = rs2.getString("real_income");
-                    end_time = rs2.getString("end_time");
+                    real_income = rs2.getString("real_income").trim();
+                    end_time = rs2.getString("end_time").trim();
                 }
 
                 /*表五，也用表二的SQL
@@ -1005,7 +1032,7 @@ public class UserServiceImpl implements UserService {
     }
 
     public boolean apiDataStr(String dayStr,String table,String param){
-        logger.info("apiDataStr(String param)=>"+param);
+        //logger.info("apiDataStr(String param)=>"+param);
         if(false){
             return apiData(param);
         }
@@ -1029,8 +1056,8 @@ public class UserServiceImpl implements UserService {
         }
         HttpEntity<String> httpEntity = new HttpEntity<>(JSON.toJSONString(map), headers);
         String result = restTemplate.postForObject(urlHttpStr, httpEntity, String.class);
-        logger.info("apiDataStr_urlHttpStr=>" + urlHttpStr);
-        logger.info("apiDataStr_httpEntity=>" + httpEntity);
+        //logger.info("apiDataStr_urlHttpStr=>" + urlHttpStr);
+        //logger.info("apiDataStr_httpEntity=>" + httpEntity);
         Result result1 = JSON.parseObject(result, Result.class);
 
         logger.info("apiDataStr结果=>" + result);
