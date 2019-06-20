@@ -23,14 +23,13 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.DecimalFormat;
+import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -112,180 +111,213 @@ public class UserServiceImpl implements UserService {
         String m = date.substring(4, 6);
         String d = date.substring(6,8 );
         String day =y+"-"+m+"-"+d;
-        String dirFile=eodDataBaseUrl+"\\"+date;
+        String dirFile=eodDataBaseUrl+File.separator+date;
         logger.info("输出：dirFile==>"+dirFile);
         try {
 
-            boolean b = dirExists(new File(dirFile));
+            //自动上传时，在配置文件加一个最后上传日期。如果当前日期大于[最后上传日期]才上传表一。表一没有上传成功，
+            // 后面的表也不用上传了,表一每天只上传一次 即可
 
-            if(b){
-                //自动上传 表一，只上传一次，最好从【清机后】的数据库中取数据（如果存在这个数据库目录，才上传）
-                //表1是一天传一次完整的，
-                //自动上传，表一是从 【清机后】的数据库中取数据
-                //自动上传 表二到表五 是从 营业中 数据库中取数据
-                logger.info("正在上传==>"+dirFile);
+            boolean eodDirExist = dirExists(new File(dirFile));
 
-                boolean b1 = processSummary(eodDataBaseUrl+date, day);
-                if(!b1){
-                    logger.info("summary上传失败_"+eodDataBaseUrl+date);
-                    result.setSuccess(false);
-                    result.setMsg(result.getMsg()+","+"summary上传失败_"+eodDataBaseUrl+date);
-                    //result =b1;
-                    //return result;
+            String readFile = readFile("_Summary_update_date.txt");
+
+            String strDate = readFile.trim()+" 23:59:59";
+
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            ParsePosition pos = new ParsePosition(0);
+            Date strtoDate = formatter.parse(strDate, pos);
+            String strtoDateStr = formatter.format(strtoDate);
+            String nowStr = formatter.format(new Date());
+            logger.info("updateTime==>"+strtoDate.getTime());
+            logger.info("updateTime==>"+strtoDateStr);
+            logger.info("currentTimeMillis==>"+System.currentTimeMillis());
+            logger.info("currentTimeMillis==>"+nowStr);
+
+            boolean theDayIsUploaded = System.currentTimeMillis() < strtoDate.getTime();
+            logger.info("theDayIsUploaded==>"+theDayIsUploaded);
+
+            logger.info("eodDirExist==>"+eodDirExist);
+
+            //有清机后目录 只上传一次 如果当前日期大于[最后上传日期]才上传表一
+            if(eodDirExist){
+                if(!theDayIsUploaded){
+                    //自动上传 表一只从清机后取数，只上传一次，最好从【清机后】的数据库中取数据（如果存在这个数据库目录，才上传）
+                    //表1是一天传一次完整的，
+                    //自动上传，表一是从 【清机后】的数据库中取数据
+                    //自动上传 表二到表五 是从 营业中 数据库中取数据
+                    logger.info("正在上传==>"+dirFile);
+
+                    boolean b1 = processSummary(eodDataBaseUrl+date, day);
+                    if(!b1){
+                        logger.info("summary上传失败_"+eodDataBaseUrl+date);
+                        result.setSuccess(false);
+                        result.setMsg(result.getMsg()+","+"summary上传失败_"+eodDataBaseUrl+date);
+                        //result =b1;
+                        //return result;
+                    }else{
+                        logger.info("summary上传成功_"+eodDataBaseUrl+date);
+                        result.setMsg(result.getMsg()+","+"summary上传成功_"+eodDataBaseUrl+date);
+
+                        boolean b2 = processBusiness(eodDataBaseUrl+date, day,date);
+                        if(!b2){
+                            logger.info("Business上传失败_"+eodDataBaseUrl+date);
+                            result.setSuccess(false);
+                            result.setMsg(result.getMsg()+","+"Business上传失败_"+eodDataBaseUrl+date);
+                            //result =b1;
+                            //return result;
+                        }else{
+                            logger.info("Business上传成功_"+eodDataBaseUrl+date);
+                            result.setMsg(result.getMsg()+","+"Business上传成功_"+eodDataBaseUrl+date);
+                        }
+                        logger.info("正在上传==>"+dirFile);
+                        boolean b0 = processBillDetail(eodDataBaseUrl+date, day,date);
+                        if(!b0){
+                            logger.info("BillDetail上传失败_"+eodDataBaseUrl+date);
+                            result.setSuccess(false);
+                            result.setMsg(result.getMsg()+","+"BillDetail上传失败_"+eodDataBaseUrl+date);
+                            //result =b1;
+                            //return result;
+                        }else{
+                            logger.info("BillDetail上传成功_"+eodDataBaseUrl+date);
+                            result.setMsg(result.getMsg()+","+"BillDetail上传成功_"+eodDataBaseUrl+date);
+                        }
+                        logger.info("正在上传==>"+dirFile);
+                        boolean b3 = processPaytypeDetail(eodDataBaseUrl+date, day,date);
+                        if(!b3){
+                            logger.info("PaytypeDetail上传失败_"+eodDataBaseUrl+date);
+                            result.setSuccess(false);
+                            result.setMsg(result.getMsg()+","+"PaytypeDetail上传失败_"+eodDataBaseUrl+date);
+                            //result =b1;
+                            //return result;
+                        }else{
+                            logger.info("PaytypeDetail上传成功_"+eodDataBaseUrl+date);
+                            result.setMsg(result.getMsg()+","+"PaytypeDetail上传成功_"+eodDataBaseUrl+date);
+                        }
+                        logger.info("正在上传==>"+dirFile);
+                        boolean b4 = processDiscountDetail(eodDataBaseUrl+date, day,date);
+                        if(!b4){
+                            logger.info("DiscountDetail上传失败_"+eodDataBaseUrl+date);
+                            result.setSuccess(false);
+                            result.setMsg(result.getMsg()+","+"DiscountDetail上传失败_"+eodDataBaseUrl+date);
+                            //result =b1;
+                            //return result;
+                        }else{
+                            logger.info("DiscountDetail上传成功_"+eodDataBaseUrl+date);
+                            result.setMsg(result.getMsg()+","+"DiscountDetail上传成功_"+eodDataBaseUrl+date);
+                        }
+
+                    }
                 }else{
-                    logger.info("summary上传成功_"+eodDataBaseUrl+date);
-                    result.setMsg(result.getMsg()+","+"summary上传成功_"+eodDataBaseUrl+date);
+                    logger.info("清机后数据已上传成功,程序不再上传数据_"+eodDataBaseUrl+date);
+                    result.setMsg(result.getMsg()+","+"清机后数据已上传成功,程序不再上传数据_"+eodDataBaseUrl+date);
                 }
 
-
-                boolean b2 = processBusiness(eodDataBaseUrl+date, day,date);
-                if(!b2){
-                    logger.info("Business上传失败_"+eodDataBaseUrl+date);
-                    result.setSuccess(false);
-                    result.setMsg(result.getMsg()+","+"Business上传失败_"+eodDataBaseUrl+date);
-                    //result =b1;
-                    //return result;
-                }else{
-                    logger.info("Business上传成功_"+eodDataBaseUrl+date);
-                    result.setMsg(result.getMsg()+","+"Business上传成功_"+eodDataBaseUrl+date);
-                }
-                logger.info("正在上传==>"+dirFile);
-                boolean b0 = processBillDetail(eodDataBaseUrl+date, day,date);
-                if(!b0){
-                    logger.info("BillDetail上传失败_"+eodDataBaseUrl+date);
-                    result.setSuccess(false);
-                    result.setMsg(result.getMsg()+","+"BillDetail上传失败_"+eodDataBaseUrl+date);
-                    //result =b1;
-                    //return result;
-                }else{
-                    logger.info("BillDetail上传成功_"+eodDataBaseUrl+date);
-                    result.setMsg(result.getMsg()+","+"BillDetail上传成功_"+eodDataBaseUrl+date);
-                }
-                logger.info("正在上传==>"+dirFile);
-                boolean b3 = processPaytypeDetail(eodDataBaseUrl+date, day,date);
-                if(!b3){
-                    logger.info("PaytypeDetail上传失败_"+eodDataBaseUrl+date);
-                    result.setSuccess(false);
-                    result.setMsg(result.getMsg()+","+"PaytypeDetail上传失败_"+eodDataBaseUrl+date);
-                    //result =b1;
-                    //return result;
-                }else{
-                    logger.info("PaytypeDetail上传成功_"+eodDataBaseUrl+date);
-                    result.setMsg(result.getMsg()+","+"PaytypeDetail上传成功_"+eodDataBaseUrl+date);
-                }
-                logger.info("正在上传==>"+dirFile);
-                boolean b4 = processDiscountDetail(eodDataBaseUrl+date, day,date);
-                if(!b4){
-                    logger.info("DiscountDetail上传失败_"+eodDataBaseUrl+date);
-                    result.setSuccess(false);
-                    result.setMsg(result.getMsg()+","+"DiscountDetail上传失败_"+eodDataBaseUrl+date);
-                    //result =b1;
-                    //return result;
-                }else{
-                    logger.info("DiscountDetail上传成功_"+eodDataBaseUrl+date);
-                    result.setMsg(result.getMsg()+","+"DiscountDetail上传成功_"+eodDataBaseUrl+date);
-                }
+                //有清机后目录,只上传清机后目录
                 return result;
 
+                //无清机后目录
             }else{
                 logger.info(dirFile+"不存在");
                 result.setMsg(result.getMsg()+","+dirFile+"不存在");
                 //result =false;
                 //return result;
-            }
 
-            if(auto){
-                //没清机的有20180207这种形式的目录吗
-                //dirFile=fBPosDataBaseUrl+"\\"+date;
-                dirFile=fBPosDataBaseUrl;
-            }
-
-            //表2-5是按流水传，3-5分钟传一次即可
-            //手动传都传的清机后的吗? 是的
-
-            boolean fb = dirExists(new File(dirFile));
-
-            if(fb){
-                //自动上传 表一，只上传一次，最好从【清机后】的数据库中取数据（如果存在这个数据库目录，才上传）
-                //表1是一天传一次完整的，
-                //自动上传，表一是从 【清机后】的数据库中取数据
-                //自动上传 表二到表五 是从 营业中 数据库中取数据
-                logger.info("正在上传==>"+dirFile);
-                String conStr =null;
+                //清机前数据只会自动上传
                 if(auto){
-                    conStr = fBPosDataBaseUrl;
-                }else{
-                    conStr = eodDataBaseUrl+date;
+                    dirFile=fBPosDataBaseUrl;
+                    //表2-5是按流水传，3-5分钟传一次即可
+                    //手动传都传的清机后的吗? 是的
+
+                    boolean fb = dirExists(new File(dirFile));
+
+                    if(fb){
+
+                        //不用上传表1
+
+                        //自动上传 表一，只上传一次，最好从【清机后】的数据库中取数据（如果存在这个数据库目录，才上传）
+                        //表1是一天传一次完整的，
+                        //自动上传，表一是从 【清机后】的数据库中取数据
+                        //自动上传 表二到表五 是从 营业中 数据库中取数据
+                        logger.info("正在上传==>"+dirFile);
+                        String conStr =null;
+                        if(auto){
+                            conStr = fBPosDataBaseUrl;
+                        }else{
+                            conStr = eodDataBaseUrl+date;
+                        }
+
+                        boolean b2 = processBusiness(conStr, day,date);
+                        if(!b2){
+                            logger.info("Business上传失败_"+conStr);
+                            result.setSuccess(false);
+                            result.setMsg(result.getMsg()+","+"Business上传失败_"+conStr);
+                            //result =b1;
+                            //return result;
+                        }else{
+                            logger.info("Business上传成功_"+conStr);
+                            result.setMsg(result.getMsg()+","+"Business上传成功_"+conStr);
+                        }
+                        logger.info("正在上传==>"+dirFile);
+                        if(auto){
+                            conStr = fBPosDataBaseUrl;
+                        }else{
+                            conStr = eodDataBaseUrl+date;
+                        }
+                        boolean b1 = processBillDetail(conStr, day,date);
+                        if(!b1){
+                            logger.info("BillDetail上传失败_"+conStr);
+                            result.setSuccess(false);
+                            result.setMsg(result.getMsg()+","+"BillDetail上传失败_"+conStr);
+                            //result =b1;
+                            //return result;
+                        }else{
+                            logger.info("BillDetail上传成功_"+conStr);
+                            result.setMsg(result.getMsg()+","+"BillDetail上传成功_"+conStr);
+                        }
+                        logger.info("正在上传==>"+dirFile);
+                        if(auto){
+                            conStr = fBPosDataBaseUrl;
+                        }else{
+                            conStr =eodDataBaseUrl+date;
+                        }
+                        boolean b3 = processPaytypeDetail(conStr, day,date);
+                        if(!b3){
+                            logger.info("PaytypeDetail上传失败_"+conStr);
+                            result.setSuccess(false);
+                            result.setMsg(result.getMsg()+","+"PaytypeDetail上传失败_"+conStr);
+                            //result =b1;
+                            //return result;
+                        }else{
+                            logger.info("PaytypeDetail上传成功_"+conStr);
+                            result.setMsg(result.getMsg()+","+"PaytypeDetail上传成功_"+conStr);
+                        }
+                        logger.info("正在上传==>"+dirFile);
+                        if(auto){
+                            conStr = fBPosDataBaseUrl;
+                        }else{
+                            conStr =eodDataBaseUrl+date;
+                        }
+                        boolean b4 = processDiscountDetail(conStr, day,date);
+                        if(!b4){
+                            logger.info("DiscountDetail上传失败_"+conStr);
+                            result.setSuccess(false);
+                            result.setMsg(result.getMsg()+","+"DiscountDetail上传失败_"+conStr);
+                            //result =b1;
+                            //return result;
+                        }else{
+                            logger.info("DiscountDetail上传成功_"+conStr);
+                            result.setMsg(result.getMsg()+","+"DiscountDetail上传成功_"+conStr);
+                        }
+
+                    }else{
+                        logger.info(dirFile+"不存在");
+                        result.setMsg(result.getMsg()+","+dirFile+"不存在");
+                        //result =false;
+                        //return result;
+                    }
                 }
 
-                boolean b2 = processBusiness(conStr, day,date);
-                if(!b2){
-                    logger.info("Business上传失败_"+conStr);
-                    result.setSuccess(false);
-                    result.setMsg(result.getMsg()+","+"Business上传失败_"+conStr);
-                    //result =b1;
-                    //return result;
-                }else{
-                    logger.info("Business上传成功_"+conStr);
-                    result.setMsg(result.getMsg()+","+"Business上传成功_"+conStr);
-                }
-                logger.info("正在上传==>"+dirFile);
-                if(auto){
-                    conStr = fBPosDataBaseUrl;
-                }else{
-                    conStr = eodDataBaseUrl+date;
-                }
-                boolean b1 = processBillDetail(conStr, day,date);
-                if(!b1){
-                    logger.info("BillDetail上传失败_"+conStr);
-                    result.setSuccess(false);
-                    result.setMsg(result.getMsg()+","+"BillDetail上传失败_"+conStr);
-                    //result =b1;
-                    //return result;
-                }else{
-                    logger.info("BillDetail上传成功_"+conStr);
-                    result.setMsg(result.getMsg()+","+"BillDetail上传成功_"+conStr);
-                }
-                logger.info("正在上传==>"+dirFile);
-                if(auto){
-                    conStr = fBPosDataBaseUrl;
-                }else{
-                    conStr =eodDataBaseUrl+date;
-                }
-                boolean b3 = processPaytypeDetail(conStr, day,date);
-                if(!b3){
-                    logger.info("PaytypeDetail上传失败_"+conStr);
-                    result.setSuccess(false);
-                    result.setMsg(result.getMsg()+","+"PaytypeDetail上传失败_"+conStr);
-                    //result =b1;
-                    //return result;
-                }else{
-                    logger.info("PaytypeDetail上传成功_"+conStr);
-                    result.setMsg(result.getMsg()+","+"PaytypeDetail上传成功_"+conStr);
-                }
-                logger.info("正在上传==>"+dirFile);
-                if(auto){
-                    conStr = fBPosDataBaseUrl;
-                }else{
-                    conStr =eodDataBaseUrl+date;
-                }
-                boolean b4 = processDiscountDetail(conStr, day,date);
-                if(!b4){
-                    logger.info("DiscountDetail上传失败_"+conStr);
-                    result.setSuccess(false);
-                    result.setMsg(result.getMsg()+","+"DiscountDetail上传失败_"+conStr);
-                    //result =b1;
-                    //return result;
-                }else{
-                    logger.info("DiscountDetail上传成功_"+conStr);
-                    result.setMsg(result.getMsg()+","+"DiscountDetail上传成功_"+conStr);
-                }
-
-            }else{
-                logger.info(dirFile+"不存在");
-                result.setMsg(result.getMsg()+","+dirFile+"不存在");
-                //result =false;
-                //return result;
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -1114,10 +1146,10 @@ public class UserServiceImpl implements UserService {
     public static boolean fileExists(File file) {
 
         if (file.exists()) {
-            //System.out.println("file exists");
+            //logger.info("file exists");
             return true;
         } /*else {
-            System.out.println("file not exists, create it ...");
+            logger.info("file not exists, create it ...");
             try {
                 file.createNewFile();
             } catch (IOException e) {
@@ -1134,15 +1166,39 @@ public class UserServiceImpl implements UserService {
         if (file.exists()) {
             if (file.isDirectory()) {
                 return true;
-                //System.out.println("dir exists");
+                //logger.info("dir exists");
             } else {
                 return false;
-                //System.out.println("the same name file exists, can not create dir");
+                //logger.info("the same name file exists, can not create dir");
             }
         } /*else {
-            System.out.println("dir not exists, create it ...");
+            logger.info("dir not exists, create it ...");
             file.mkdir();
         }*/
         return false;
+    }
+
+    private String readFile ( String path ) throws IOException {
+
+        //线程不安全
+        StringBuffer builder = new StringBuffer();
+
+        try {
+
+            InputStreamReader reader = new InputStreamReader( new FileInputStream( path ), "UTF-8" );
+            BufferedReader bfReader = new BufferedReader( reader );
+
+            String tmpContent = null;
+
+            while ( ( tmpContent = bfReader.readLine() ) != null ) {
+                builder.append( tmpContent );
+            }
+
+            bfReader.close();
+
+        } catch ( UnsupportedEncodingException e ) {
+            // 忽略
+        }
+        return builder.toString();
     }
 }
