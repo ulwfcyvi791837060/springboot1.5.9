@@ -122,6 +122,10 @@ public class UserServiceImpl implements UserService {
 
             String readFile = readFile("_Summary_update_date.txt");
 
+            if(readFile!=null&&"".equals(readFile)){
+                readFile="2010-01-01";
+            }
+
             String strDate = readFile.trim()+" 23:59:59";
 
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -148,7 +152,7 @@ public class UserServiceImpl implements UserService {
                     //自动上传 表二到表五 是从 营业中 数据库中取数据
                     logger.info("正在上传==>"+dirFile);
 
-                    boolean b1 = processSummary(eodDataBaseUrl+date, day);
+                    boolean b1 = processSummary(eodDataBaseUrl+date, day,date);
                     if(!b1){
                         logger.info("summary上传失败_"+eodDataBaseUrl+date);
                         result.setSuccess(false);
@@ -330,12 +334,128 @@ public class UserServiceImpl implements UserService {
      * @Author zenghuikang
      * @Description
      * @Date 2019/6/15 11:07
-      * @param url
+      * @param conStr
      * @param day
      * @return boolean
      * @throws
      **/
-    private boolean processSummary(String conStr,String day ) {
+    private boolean processSummary(String conStr,String day,String date ) {
+
+        double billNum=0;//账单笔数
+        double discNum=0;//优惠笔数
+
+        String sql3 = "SELECT NUMBER,sum(Qty*OPRICE) as receivable,max(DATE) as Saledate,min(TIME) as start_time FROM CTI.dbf group by NUMBER";
+
+        logger.info("sql3=>" + sql3);
+        Connection con3 = null;
+        Connection con4 = null;
+        try {
+            con3 = EodGetConn.getGc().getCon(conStr);
+            con4 = EodGetConn.getGc().getCon(conStr);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        Statement st3 = null;
+        ResultSet rs3 = null;
+        Statement st4 = null;
+        ResultSet rs4 = null;
+        try {
+            st3 = con3.createStatement();
+            rs3 = st3.executeQuery(sql3);
+
+            Business business = new Business();
+
+            SimpleDateFormat sdf3 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            SimpleDateFormat sdf8 = new SimpleDateFormat("yyyy-MM-dd");
+            // 创建Date对象，表示当前时间
+            Date now = new Date();
+            // 调用format()方法，将日期转换为字符串并输出
+            StringBuffer recordsSb = new StringBuffer();
+
+            //某天的应收总额，实收总额，优惠总额。
+            double receivableSum=0;
+            double realIncomeSum=0;
+            double discountSum=0;
+
+            while (rs3.next()) {
+                //start_time ，end_time 只有时间，，你加上日期
+                //优惠金额*=应收金额* -实际收入* receivable-real_income
+                /*表三和表二，SQL是一样的，
+                菜品名称 = 甜品
+                折前单价 = 应收金额*
+                        折后单价 = 实际收入*
+                        数量 = 1
+                        serial = 日期（yyyymmdd）+ NUMBER
+                表四，也用表二的SQL ,
+                        支付方式 = 现金
+                支付金额 = 实际收入
+                表五，也用表二的SQL
+                优惠类型 统一写 【优惠折扣】
+                优惠金额* = 应收金额*- 实际收入*
+                自动上传，允许重复上传，，SQL可不用加条件，表二到表五每次可上传多条记录，，全部上传吧*/
+
+                //NUMBER,receivable,Saledate,start_time,real_income,end_time
+                String NUMBER = rs3.getString("NUMBER").trim();
+                String receivable = rs3.getString("receivable").trim();
+                String Saledate = rs3.getString("Saledate").trim();
+                String start_time = rs3.getString("start_time").trim();
+
+                sql3="SELECT NUMBER,sum(AMOUNT) as real_income,max(TIME) as end_time FROM CTP.dbf where not isnull(AMOUNT) and " +
+                        "NUMBER ="+NUMBER+" AND PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES) group by NUMBER \n";
+                st4 = con4.createStatement();
+
+                rs4 = st4.executeQuery(sql3);
+                String real_income="";
+                String end_time="";
+                while (rs4.next()) {
+                    real_income = rs4.getString("real_income").trim();
+                    end_time = rs4.getString("end_time").trim();
+                }
+
+
+
+                business.setLocation_id("");
+                business.setStore_id("");
+                business.setStore_name("");
+                business.setB_date(Saledate);
+                DecimalFormat g1=new DecimalFormat("00000");
+                String startZeroStr = g1.format(Integer.valueOf(NUMBER));
+                business.setSerial(date+startZeroStr);
+                business.setStart_time(Saledate+" "+start_time);
+                business.setEnd_time(Saledate+" "+end_time);
+                business.setReceivable(Double.parseDouble(receivable));
+                business.setReal_income(Double.parseDouble(real_income));
+                double disc = Double.parseDouble(receivable) - Double.parseDouble(real_income);
+                business.setDiscount_amount(Double.parseDouble(df.format(disc)));
+                business.setIs_chargeback("否");
+                business.setChargeback(0.0D);
+                business.setTime(sdf3.format(now));
+                business.setRefresh_time(sdf3.format(now));
+
+                receivableSum=receivableSum+Double.parseDouble(receivable);
+                realIncomeSum=realIncomeSum+Double.parseDouble(real_income);
+
+
+                if (Double.parseDouble(receivable)>Double.parseDouble(real_income)) {
+                    discNum ++;//优惠笔数
+                    discountSum=discountSum+disc;
+                }
+
+                billNum ++;//账单笔数
+            }
+
+        }catch (SQLException ex) {
+            ///错误处理
+            logger.info(ex.getMessage());
+        }finally{
+            EodGetConn.getGc().closeAll(rs3,st3,con3);
+            EodGetConn.getGc().closeAll(rs4,st4,con4);
+        }
+
+        //return false;
+
+
+
         String sql = "SELECT  sum(AMOUNT) as net_AMOUNT FROM CTP.dbf where not isnull(AMOUNT) AND (PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES))";
         logger.info("sql=>" + sql);
 
@@ -369,7 +489,6 @@ public class UserServiceImpl implements UserService {
             SELECT  sum(AMOUNT) as net_AMOUNT FROM CTP.dbf where not isnull(AMOUNT) AND (PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES))
             表一  优惠总额=应收总额-实收总额*/
 
-
             Summary summary = new Summary();
 
             while (rs2.next()) {
@@ -396,9 +515,9 @@ public class UserServiceImpl implements UserService {
                     summary.setStoreName("");
                     summary.setbDate("");
                     summary.setsRealIncome(Double.parseDouble(df.format(Double.parseDouble(sRealIncome))));
-                    summary.setsBillNum(0.0D);
+                    summary.setsBillNum(billNum);
                     summary.setsDiscountTotal(Double.parseDouble(df.format(summary.getsReceivable()-summary.getsRealIncome())));
-                    summary.setsDiscountNum(0.0D);
+                    summary.setsDiscountNum(discNum);
                     summary.setsChargeback(0.0D);
                     summary.setsChargebackNum(0.0D);
                     summary.setsTime(sdf3.format(now));
@@ -465,7 +584,7 @@ public class UserServiceImpl implements UserService {
      * @Author zenghuikang
      * @Description
      * @Date 2019/6/15 11:08
-     * @param url
+     * @param conStr
      * @param day
      * @return boolean
      * @throws
@@ -633,7 +752,7 @@ public class UserServiceImpl implements UserService {
      * @Author zenghuikang
      * @Description
      * @Date 2019/6/15 11:08
-     * @param url
+     * @param conStr
      * @param day
      * @return boolean
      * @throws
@@ -799,7 +918,7 @@ public class UserServiceImpl implements UserService {
      * @Author zenghuikang
      * @Description
      * @Date 2019/6/15 11:09
-     * @param url
+     * @param conStr
      * @param day
      * @return boolean
      * @throws
@@ -935,7 +1054,7 @@ public class UserServiceImpl implements UserService {
      * @Author zenghuikang
      * @Description
      * @Date 2019/6/15 11:09
-     * @param url
+     * @param conStr
      * @param day
      * @return boolean
      * @throws
@@ -1184,6 +1303,11 @@ public class UserServiceImpl implements UserService {
         StringBuffer builder = new StringBuffer();
 
         try {
+
+            boolean fileExists = fileExists(new File(path));
+            if(!fileExists){
+                return "";
+            }
 
             InputStreamReader reader = new InputStreamReader( new FileInputStream( path ), "UTF-8" );
             BufferedReader bfReader = new BufferedReader( reader );
