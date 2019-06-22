@@ -46,10 +46,10 @@ public class IndexController {
 
 
     @PostMapping(value = "/upload_action")
-    public String uploadAction(Model model,@RequestParam("date") String date, RedirectAttributes redirectAttributes) {
+    public String uploadAction(@RequestParam("date") String date, RedirectAttributes redirectAttributes) {
         Result result = userServiceimpl.uploadAction(date, false);
-        model.addAttribute("name", result.getMsg());
-        redirectAttributes.addFlashAttribute("name", result.getMsg());
+        String msg = result.getMsg().replaceAll("null,", "");
+        redirectAttributes.addFlashAttribute("name", msg);
         return "redirect:/upload";
     }
 }
