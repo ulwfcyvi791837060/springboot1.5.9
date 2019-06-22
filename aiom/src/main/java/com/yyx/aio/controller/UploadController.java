@@ -7,6 +7,8 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -33,12 +35,12 @@ import java.io.IOException;
  * @modified: yangkai.shen
  */
 @RestController
-@Slf4j
 @RequestMapping("/upload")
 public class UploadController {
 	@Value("${spring.servlet.multipart.location}")
 	private String fileTempPath;
 
+	private Logger log = LoggerFactory.getLogger(getClass());
 
 	@PostMapping(value = "/local", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public Dict local(@RequestParam("file") MultipartFile file) {
