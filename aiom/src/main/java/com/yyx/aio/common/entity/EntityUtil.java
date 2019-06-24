@@ -28,7 +28,7 @@ public class EntityUtil {
                 m = model.getClass().getMethod("get" + methName);
                 value = String.valueOf(m.invoke(model));
                 System.out.print(m.invoke(model));
-                if (null != value && StringUtil.isNotEmpty(value) && "null" != value) {
+                if (null != value && StringUtil.isNotEmpty(value) && !"null".equals(value)) {
                     map.put(name,value);
                 }
             } catch (NoSuchMethodException e) {

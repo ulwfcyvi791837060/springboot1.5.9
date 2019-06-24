@@ -28,23 +28,18 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.text.DecimalFormat;
-import java.text.ParsePosition;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.text.*;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 /**
  * 方法
  * @Author zenghuikang
- * @Description 
- * @Date 2019/6/14 18:06 
+ * @Description
+ * @Date 2019/6/14 18:06
  * @return
- * @throws 
+ * @throws
  **/
 @Service("userService")
 public class UserServiceImpl implements UserService {
@@ -99,32 +94,42 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Result uploadAction(String date, boolean auto) {
+    public Result uploadAction(String datePar, boolean auto) {
         Result result = new Result();
         logger.info("【job2】开始执行：{}", DateUtil.formatDateTime(new Date()));
-        if(date!=null&&date.trim().length()!=8){
+        if(datePar!=null&&datePar.trim().length()!=8){
             result.setSuccess(false);
             result.setMsg("输入的日期格式不对");
             return result;
         }
-        String y = date.substring(0, 4);
-        String m = date.substring(4, 6);
-        String d = date.substring(6,8 );
-        String day =y+"-"+m+"-"+d;
-        String eodDirFile=eodDataBaseUrl+File.separator+date;
-        logger.info("输出：dirFile==>"+eodDirFile);
+        String y ="2010";
+        String m ="01";
+        String d ="01";
+        if(datePar!=null){
+            y = datePar.substring(0, 4);
+            m = datePar.substring(4, 6);
+            d = datePar.substring(6,8 );
+        }else{
+            result.setSuccess(false);
+            result.setMsg("输入的日期格式不对");
+            return result;
+        }
+        String dayPar =y+"-"+m+"-"+d;
         try {
             //自动上传时，在配置文件加一个最后上传日期。如果当前日期大于[最后上传日期]才上传表一。表一没有上传成功，
             // 后面的表也不用上传了,表一每天只上传一次 即可
-            boolean eodDirExist = dirExists(new File(eodDirFile));
             String readFile = readFile("_Summary_update_date.txt");
             if(readFile!=null&&"".equals(readFile)){
                 readFile="2010-01-01";
             }
-            String strDate = readFile.trim()+" 23:59:59";
+
+            readFile=readFile.trim();
+            /*String strDate = readFile.trim()+" 23:59:59";
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             ParsePosition pos = new ParsePosition(0);
             Date strtoDate = formatter.parse(strDate, pos);
+            boolean isUploaded = System.currentTimeMillis() < strtoDate.getTime();*/
+
             /*String strtoDateStr = formatter.format(strtoDate);
             String nowStr = formatter.format(new Date());
             logger.info("updateTime==>"+strtoDate.getTime());
@@ -132,39 +137,54 @@ public class UserServiceImpl implements UserService {
             logger.info("currentTimeMillis==>"+System.currentTimeMillis());
             logger.info("currentTimeMillis==>"+nowStr);*/
 
-            boolean theDayIsUploaded = System.currentTimeMillis() < strtoDate.getTime();
+
+
             /*logger.info("theDayIsUploaded==>"+theDayIsUploaded);
             logger.info("eodDirExist==>"+eodDirExist);*/
 
             if(auto){
                 //自动上传
-                //有清机后目录 只上传一次 如果当前日期大于[最后上传日期]才上传表一
-                if(eodDirExist){
-                    if(!theDayIsUploaded){
-                        uploadEod(eodDirFile,result,day,date);
-                    }else{
-                        logger.info("清机后数据已上传成功,自动上传不再上传数据_"+eodDataBaseUrl+date);
-                    }
-                    //有清机后目录,只上传清机后目录
-                    return result;
+                List<String> days = getDays(readFile, dayPar);
+                for (int i = 1; i < days.size(); i++) {
+                    String uploadDay = days.get(i);
+                    String[] split = uploadDay.split("-");
+                    if(split!=null&&split.length==3){
+                        String uploadDate = split[0]+split[1]+split[2];
+                        String eodDirFileAuto=eodDataBaseUrl+File.separator+uploadDate;
+                        boolean eodDirExistAuto = dirExists(new File(eodDirFileAuto));
 
-                    //无清机后目录
-                }else{
-                    logger.info("清机后数据不存在_"+eodDataBaseUrl+date);
-                    uploadFBPos(fBPosDataBaseUrl,result,day,date);
-                    return result;
+                        //有清机后目录 只上传一次 如果当前日期大于[最后上传日期]才上传表一
+                        if(eodDirExistAuto){
+                            //如果当前日期大于[最后上传日期]才上传表一
+                            logger.info("正在上传_"+eodDirFileAuto);
+
+                            uploadEod(eodDirFileAuto,result,uploadDay,uploadDate);
+                            //有清机后目录,只上传清机后目录
+                            //无清机后目录
+                        }else{
+                            logger.info("清机后数据不存在_"+eodDirFileAuto);
+                            //只传今天的清机前数据
+                            /*if(uploadDate!=null&&uploadDate.equals(datePar)){
+                            }*/
+                            logger.info("正在上传_"+fBPosDataBaseUrl);
+                            uploadFBPos(fBPosDataBaseUrl,result,dayPar,datePar);
+                            //直接返回，停止for 不允许跳过日期上传
+                            return result;
+                        }
+                    }
                 }
             }else{
-                //手动上传
-                if(eodDirExist){
-                    logger.info("清机后数据存在_"+eodDataBaseUrl+date);
-                    uploadEod(eodDirFile,result,day,date);
-                    return result;
+                // 自动上传时 datePar 不应该为 now 而应该为上次上传至今天之间
+                String eodDirFilePar=eodDataBaseUrl+File.separator+datePar;
+                boolean eodDirExistPar = dirExists(new File(eodDirFilePar));
+                //手动上传 par
+                if(eodDirExistPar){
+                    logger.info("清机后数据存在_"+eodDirFilePar);
+                    uploadEod(eodDirFilePar,result,dayPar,datePar);
                     //无清机后目录
                 }else{
-                    logger.info("清机后数据不存在_"+eodDataBaseUrl+date);
-                    result.setMsg(result.getMsg()+","+"清机后数据不存在,数据上传失败_"+eodDataBaseUrl+date);
-                    return result;
+                    logger.info("清机后数据不存在_"+eodDirFilePar);
+                    result.setMsg(result.getMsg()+","+"清机后数据不存在,数据上传失败_"+eodDirFilePar);
                 }
             }
         } catch (Exception e) {
@@ -173,77 +193,75 @@ public class UserServiceImpl implements UserService {
         return result;
     }
 
-    private void uploadEod(String dirFile,Result result,String day,String date){
-            //自动上传 表一只从清机后取数，只上传一次，最好从【清机后】的数据库中取数据（如果存在这个数据库目录，才上传）
-            //表1是一天传一次完整的，
-            //自动上传，表一是从 【清机后】的数据库中取数据
-            //自动上传 表二到表五 是从 营业中 数据库中取数据
-            logger.info("正在上传==>"+dirFile);
+    private void uploadEod(String eodDirFile,Result result,String day,String datePar){
+        //自动上传 表一只从清机后取数，只上传一次，最好从【清机后】的数据库中取数据（如果存在这个数据库目录，才上传）
+        //表1是一天传一次完整的，
+        //自动上传，表一是从 【清机后】的数据库中取数据
+        //自动上传 表二到表五 是从 营业中 数据库中取数据
+        logger.info("正在上传==>"+eodDirFile);
 
-            boolean b1 = processSummary(eodDataBaseUrl+date, day,date);
-            if(!b1){
-                logger.info("summary上传失败_"+eodDataBaseUrl+date);
+        boolean b1 = processSummary(eodDirFile, day,datePar);
+        if(!b1){
+            logger.info("summary上传失败_"+eodDirFile);
+            result.setSuccess(false);
+            result.setMsg(result.getMsg()+","+"summary上传失败_"+eodDirFile);
+            //result =b1;
+            //return result;
+        }else{
+            logger.info("summary上传成功_"+eodDirFile);
+            result.setMsg(result.getMsg()+","+"summary上传成功_"+eodDirFile);
+
+            boolean b2 = processBusiness(eodDirFile, day,datePar);
+            if(!b2){
+                logger.info("Business上传失败_"+eodDirFile);
                 result.setSuccess(false);
-                result.setMsg(result.getMsg()+","+"summary上传失败_"+eodDataBaseUrl+date);
+                result.setMsg(result.getMsg()+","+"Business上传失败_"+eodDirFile);
                 //result =b1;
                 //return result;
             }else{
-                logger.info("summary上传成功_"+eodDataBaseUrl+date);
-                result.setMsg(result.getMsg()+","+"summary上传成功_"+eodDataBaseUrl+date);
-
-                boolean b2 = processBusiness(eodDataBaseUrl+date, day,date);
-                if(!b2){
-                    logger.info("Business上传失败_"+eodDataBaseUrl+date);
-                    result.setSuccess(false);
-                    result.setMsg(result.getMsg()+","+"Business上传失败_"+eodDataBaseUrl+date);
-                    //result =b1;
-                    //return result;
-                }else{
-                    logger.info("Business上传成功_"+eodDataBaseUrl+date);
-                    result.setMsg(result.getMsg()+","+"Business上传成功_"+eodDataBaseUrl+date);
-                }
-                logger.info("正在上传==>"+dirFile);
-                boolean b0 = processBillDetail(eodDataBaseUrl+date, day,date);
-                if(!b0){
-                    logger.info("BillDetail上传失败_"+eodDataBaseUrl+date);
-                    result.setSuccess(false);
-                    result.setMsg(result.getMsg()+","+"BillDetail上传失败_"+eodDataBaseUrl+date);
-                    //result =b1;
-                    //return result;
-                }else{
-                    logger.info("BillDetail上传成功_"+eodDataBaseUrl+date);
-                    result.setMsg(result.getMsg()+","+"BillDetail上传成功_"+eodDataBaseUrl+date);
-                }
-                logger.info("正在上传==>"+dirFile);
-                boolean b3 = processPaytypeDetail(eodDataBaseUrl+date, day,date);
-                if(!b3){
-                    logger.info("PaytypeDetail上传失败_"+eodDataBaseUrl+date);
-                    result.setSuccess(false);
-                    result.setMsg(result.getMsg()+","+"PaytypeDetail上传失败_"+eodDataBaseUrl+date);
-                    //result =b1;
-                    //return result;
-                }else{
-                    logger.info("PaytypeDetail上传成功_"+eodDataBaseUrl+date);
-                    result.setMsg(result.getMsg()+","+"PaytypeDetail上传成功_"+eodDataBaseUrl+date);
-                }
-                logger.info("正在上传==>"+dirFile);
-                boolean b4 = processDiscountDetail(eodDataBaseUrl+date, day,date);
-                if(!b4){
-                    logger.info("DiscountDetail上传失败_"+eodDataBaseUrl+date);
-                    result.setSuccess(false);
-                    result.setMsg(result.getMsg()+","+"DiscountDetail上传失败_"+eodDataBaseUrl+date);
-                    //result =b1;
-                    //return result;
-                }else{
-                    logger.info("DiscountDetail上传成功_"+eodDataBaseUrl+date);
-                    result.setMsg(result.getMsg()+","+"DiscountDetail上传成功_"+eodDataBaseUrl+date);
-                }
+                logger.info("Business上传成功_"+eodDirFile);
+                result.setMsg(result.getMsg()+","+"Business上传成功_"+eodDirFile);
             }
+            logger.info("正在上传==>"+eodDirFile);
+            boolean b0 = processBillDetail(eodDirFile, day,datePar);
+            if(!b0){
+                logger.info("BillDetail上传失败_"+eodDirFile);
+                result.setSuccess(false);
+                result.setMsg(result.getMsg()+","+"BillDetail上传失败_"+eodDirFile);
+                //result =b1;
+                //return result;
+            }else{
+                logger.info("BillDetail上传成功_"+eodDirFile);
+                result.setMsg(result.getMsg()+","+"BillDetail上传成功_"+eodDirFile);
+            }
+            logger.info("正在上传==>"+eodDirFile);
+            boolean b3 = processPaytypeDetail(eodDirFile, day,datePar);
+            if(!b3){
+                logger.info("PaytypeDetail上传失败_"+eodDirFile);
+                result.setSuccess(false);
+                result.setMsg(result.getMsg()+","+"PaytypeDetail上传失败_"+eodDirFile);
+                //result =b1;
+                //return result;
+            }else{
+                logger.info("PaytypeDetail上传成功_"+eodDirFile);
+                result.setMsg(result.getMsg()+","+"PaytypeDetail上传成功_"+eodDirFile);
+            }
+            logger.info("正在上传==>"+eodDirFile);
+            boolean b4 = processDiscountDetail(eodDirFile, day,datePar);
+            if(!b4){
+                logger.info("DiscountDetail上传失败_"+eodDirFile);
+                result.setSuccess(false);
+                result.setMsg(result.getMsg()+","+"DiscountDetail上传失败_"+eodDirFile);
+                //result =b1;
+                //return result;
+            }else{
+                logger.info("DiscountDetail上传成功_"+eodDirFile);
+                result.setMsg(result.getMsg()+","+"DiscountDetail上传成功_"+eodDirFile);
+            }
+        }
     }
 
     private void uploadFBPos(String FBPosDirFile,Result result,String day,String date) {
-        logger.info(FBPosDirFile+"不存在");
-        result.setMsg(result.getMsg()+","+FBPosDirFile+"不存在");
         //result =false;
         //return result;
 
@@ -263,52 +281,52 @@ public class UserServiceImpl implements UserService {
             //自动上传 表二到表五 是从 营业中 数据库中取数据
             logger.info("正在上传==>"+FBPosDirFile);
 
-            boolean b2 = processBusiness(fBPosDataBaseUrl, day,date);
+            boolean b2 = processBusiness(FBPosDirFile, day,date);
             if(!b2){
-                logger.info("Business上传失败_"+fBPosDataBaseUrl);
+                logger.info("Business上传失败_"+FBPosDirFile);
                 result.setSuccess(false);
-                result.setMsg(result.getMsg()+","+"Business上传失败_"+fBPosDataBaseUrl);
+                result.setMsg(result.getMsg()+","+"Business上传失败_"+FBPosDirFile);
                 //result =b1;
                 //return result;
             }else{
-                logger.info("Business上传成功_"+fBPosDataBaseUrl);
-                result.setMsg(result.getMsg()+","+"Business上传成功_"+fBPosDataBaseUrl);
+                logger.info("Business上传成功_"+FBPosDirFile);
+                result.setMsg(result.getMsg()+","+"Business上传成功_"+FBPosDirFile);
             }
             logger.info("正在上传==>"+FBPosDirFile);
-            boolean b1 = processBillDetail(fBPosDataBaseUrl, day,date);
+            boolean b1 = processBillDetail(FBPosDirFile, day,date);
             if(!b1){
-                logger.info("BillDetail上传失败_"+fBPosDataBaseUrl);
+                logger.info("BillDetail上传失败_"+FBPosDirFile);
                 result.setSuccess(false);
-                result.setMsg(result.getMsg()+","+"BillDetail上传失败_"+fBPosDataBaseUrl);
+                result.setMsg(result.getMsg()+","+"BillDetail上传失败_"+FBPosDirFile);
                 //result =b1;
                 //return result;
             }else{
-                logger.info("BillDetail上传成功_"+fBPosDataBaseUrl);
-                result.setMsg(result.getMsg()+","+"BillDetail上传成功_"+fBPosDataBaseUrl);
+                logger.info("BillDetail上传成功_"+FBPosDirFile);
+                result.setMsg(result.getMsg()+","+"BillDetail上传成功_"+FBPosDirFile);
             }
             logger.info("正在上传==>"+FBPosDirFile);
-            boolean b3 = processPaytypeDetail(fBPosDataBaseUrl, day,date);
+            boolean b3 = processPaytypeDetail(FBPosDirFile, day,date);
             if(!b3){
-                logger.info("PaytypeDetail上传失败_"+fBPosDataBaseUrl);
+                logger.info("PaytypeDetail上传失败_"+FBPosDirFile);
                 result.setSuccess(false);
-                result.setMsg(result.getMsg()+","+"PaytypeDetail上传失败_"+fBPosDataBaseUrl);
+                result.setMsg(result.getMsg()+","+"PaytypeDetail上传失败_"+FBPosDirFile);
                 //result =b1;
                 //return result;
             }else{
-                logger.info("PaytypeDetail上传成功_"+fBPosDataBaseUrl);
-                result.setMsg(result.getMsg()+","+"PaytypeDetail上传成功_"+fBPosDataBaseUrl);
+                logger.info("PaytypeDetail上传成功_"+FBPosDirFile);
+                result.setMsg(result.getMsg()+","+"PaytypeDetail上传成功_"+FBPosDirFile);
             }
             logger.info("正在上传==>"+FBPosDirFile);
-            boolean b4 = processDiscountDetail(fBPosDataBaseUrl, day,date);
+            boolean b4 = processDiscountDetail(FBPosDirFile, day,date);
             if(!b4){
-                logger.info("DiscountDetail上传失败_"+fBPosDataBaseUrl);
+                logger.info("DiscountDetail上传失败_"+FBPosDirFile);
                 result.setSuccess(false);
-                result.setMsg(result.getMsg()+","+"DiscountDetail上传失败_"+fBPosDataBaseUrl);
+                result.setMsg(result.getMsg()+","+"DiscountDetail上传失败_"+FBPosDirFile);
                 //result =b1;
                 //return result;
             }else{
-                logger.info("DiscountDetail上传成功_"+fBPosDataBaseUrl);
-                result.setMsg(result.getMsg()+","+"DiscountDetail上传成功_"+fBPosDataBaseUrl);
+                logger.info("DiscountDetail上传成功_"+FBPosDirFile);
+                result.setMsg(result.getMsg()+","+"DiscountDetail上传成功_"+FBPosDirFile);
             }
 
         }else{
@@ -324,7 +342,7 @@ public class UserServiceImpl implements UserService {
      * @Author zenghuikang
      * @Description
      * @Date 2019/6/15 11:07
-      * @param conStr
+     * @param conStr
      * @param day
      * @return boolean
      * @throws
@@ -350,24 +368,21 @@ public class UserServiceImpl implements UserService {
         Statement st4 = null;
         ResultSet rs4 = null;
         try {
-            st3 = con3.createStatement();
-            rs3 = st3.executeQuery(sql3);
-
-            Business business = new Business();
-
-            SimpleDateFormat sdf3 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            SimpleDateFormat sdf8 = new SimpleDateFormat("yyyy-MM-dd");
+            if(con3!=null){
+                st3 = con3.createStatement();
+                rs3 = st3.executeQuery(sql3);
+            }else{
+                return false;
+            }
             // 创建Date对象，表示当前时间
-            Date now = new Date();
             // 调用format()方法，将日期转换为字符串并输出
-            StringBuffer recordsSb = new StringBuffer();
 
             //某天的应收总额，实收总额，优惠总额。
             double receivableSum=0;
             double realIncomeSum=0;
             double discountSum=0;
 
-            while (rs3.next()) {
+            while (rs3!=null&&rs3.next()) {
                 //start_time ，end_time 只有时间，，你加上日期
                 //优惠金额*=应收金额* -实际收入* receivable-real_income
                 /*表三和表二，SQL是一样的，
@@ -399,7 +414,7 @@ public class UserServiceImpl implements UserService {
                 rs4 = st4.executeQuery(sql3);
                 String real_income="";
                 String end_time="";
-                while (rs4.next()) {
+                while (rs4!=null&&rs4.next()) {
                     String number = rs4.getString("NUMBER").trim();
                     if(NUMBER.equals(number)){
                         real_income = rs4.getString("real_income").trim();
@@ -407,26 +422,9 @@ public class UserServiceImpl implements UserService {
                     }
                 }
 
-
-
-                business.setLocation_id("");
-                business.setStore_id("");
-                business.setStore_name("");
-                business.setB_date(Saledate);
                 DecimalFormat g1=new DecimalFormat("00000");
                 String startZeroStr = g1.format(Integer.valueOf(NUMBER));
-                business.setSerial(date+startZeroStr);
-                business.setStart_time(Saledate+" "+start_time);
-                business.setEnd_time(Saledate+" "+end_time);
-                business.setReceivable(Double.parseDouble(receivable));
-                business.setReal_income(Double.parseDouble(real_income));
                 double disc = Double.parseDouble(receivable) - Double.parseDouble(real_income);
-                business.setDiscount_amount(Double.parseDouble(df.format(disc)));
-                business.setIs_chargeback("否");
-                business.setChargeback(0.0D);
-                business.setTime(sdf3.format(now));
-                business.setRefresh_time(sdf3.format(now));
-
                 receivableSum=receivableSum+Double.parseDouble(receivable);
                 realIncomeSum=realIncomeSum+Double.parseDouble(real_income);
 
@@ -471,11 +469,16 @@ public class UserServiceImpl implements UserService {
         ResultSet rs = null;
         ResultSet rs2 = null;
         try {
-            st = con.createStatement();
-            st2 = con2.createStatement();
+            if(con!=null&&con2!=null){
+                st = con.createStatement();
+                st2 = con2.createStatement();
 
-            rs = st.executeQuery(sql);
-            rs2 = st2.executeQuery(sql2);
+                rs = st.executeQuery(sql);
+                rs2 = st2.executeQuery(sql2);
+            }else{
+                return false;
+            }
+
 
             /*表一：
             应收总金额：
@@ -486,7 +489,7 @@ public class UserServiceImpl implements UserService {
 
             Summary summary = new Summary();
 
-            while (rs2.next()) {
+            while (rs2!=null&&rs2.next()) {
                 String sale_AMOUNT = rs2.getString("sale_AMOUNT").trim();
                 logger.info("sale_AMOUNT:" + sale_AMOUNT);
                 if(sale_AMOUNT!=null&&!"".equals(sale_AMOUNT)){
@@ -499,7 +502,7 @@ public class UserServiceImpl implements UserService {
             // 创建Date对象，表示当前时间
             Date now = new Date();
             // 调用format()方法，将日期转换为字符串并输出
-            while (rs.next()) {
+            while (rs!=null&&rs.next()) {
 
                 String sRealIncome = rs.getString("net_AMOUNT").trim();
                 logger.info("net_AMOUNT:" + sRealIncome);
@@ -555,8 +558,10 @@ public class UserServiceImpl implements UserService {
                             "    ],\n" +
                             "    \"tableName\": \"Summary\"\n" +
                             "}";
-                    boolean summary1 = apiDataStr(sdf8.format(now), "_Summary", param);
+                    boolean summary1 = apiDataStr(day, "_Summary", param);
                     if(summary1){
+                        AppendContentToFile.method4("_Summary_update_date.txt",day);
+
                         //再加点日志，表二的数据日志，加一条汇总的日志：某天的应收总额，实收总额，优惠总额。
                         String log = conStr+"_summary上传成功,应收总额="+summary.getsReceivable()+"，实收总额="+summary.getsRealIncome()+"，优惠总额="+summary.getsDiscountTotal()+"";
                         AppendContentToFile.method2(sdf8.format(now)+"_Summary_and_Business_"+"log.txt",sdf3.format(new Date())+"_Summary==>"+log);
@@ -601,8 +606,13 @@ public class UserServiceImpl implements UserService {
         Statement st2 = null;
         ResultSet rs2 = null;
         try {
-            st = con.createStatement();
-            rs = st.executeQuery(sql);
+            if(con!=null){
+                st = con.createStatement();
+                rs = st.executeQuery(sql);
+            }else{
+                return false;
+            }
+
 
             Business business = new Business();
 
@@ -617,7 +627,7 @@ public class UserServiceImpl implements UserService {
             double receivableSum=0;
             double realIncomeSum=0;
             double discountSum=0;
-            while (rs.next()) {
+            while (rs!=null&&rs.next()) {
                 //start_time ，end_time 只有时间，，你加上日期
                 //优惠金额*=应收金额* -实际收入* receivable-real_income
                 /*表三和表二，SQL是一样的，
@@ -650,7 +660,7 @@ public class UserServiceImpl implements UserService {
                 rs2 = st2.executeQuery(sql);
                 String real_income="";
                 String end_time="";
-                while (rs2.next()) {
+                while (rs2!=null&&rs2.next()) {
                     String number = rs2.getString("NUMBER").trim();
                     if(NUMBER.equals(number)){
                         real_income = rs2.getString("real_income").trim();
@@ -704,7 +714,7 @@ public class UserServiceImpl implements UserService {
 
             }
 
-            if(recordsSb!=null&&!"".equals(recordsSb)){
+            if(recordsSb!=null&&!"".equals(recordsSb.toString())){
                 String param = "{\n" +
                         "    \"columnNames\": [\n" +
                         "        \"location_id\",\n" +
@@ -774,9 +784,14 @@ public class UserServiceImpl implements UserService {
         Statement st2 = null;
         ResultSet rs2 = null;
         try {
-            st = con.createStatement();
+            if(con!=null){
+                st = con.createStatement();
 
-            rs = st.executeQuery(sql);
+                rs = st.executeQuery(sql);
+
+            }else{
+                return false;
+            }
 
             BillDetail billDetail = new BillDetail();
 
@@ -786,7 +801,7 @@ public class UserServiceImpl implements UserService {
             Date now = new Date();
             // 调用format()方法，将日期转换为字符串并输出
             StringBuffer recordsSb = new StringBuffer();
-            while (rs.next()) {
+            while (rs!=null&&rs.next()) {
 
                 //NUMBER,receivable,Saledate,start_time,real_income,end_time
                 String NUMBER = rs.getString("NUMBER").trim();
@@ -811,7 +826,7 @@ public class UserServiceImpl implements UserService {
                 rs2 = st2.executeQuery(sql);
                 String real_income="";
                 String end_time="";
-                while (rs2.next()) {
+                while (rs2!=null&&rs2.next()) {
                     String number = rs2.getString("NUMBER").trim();
                     if(NUMBER.equals(number)){
                         real_income = rs2.getString("real_income").trim();
@@ -874,7 +889,7 @@ public class UserServiceImpl implements UserService {
 
             }
 
-            if(recordsSb!=null&&!"".equals(recordsSb)){
+            if(recordsSb!=null&&!"".equals(recordsSb.toString())){
                 String param="";
                 param = "{\n" +
                         "    \"columnNames\": [\n" +
@@ -946,10 +961,13 @@ public class UserServiceImpl implements UserService {
         Statement st2 = null;
         ResultSet rs2 = null;
         try {
+            if(con!=null){
+                st = con.createStatement();
+                rs = st.executeQuery(sql);
+            }else{
+                return false;
+            }
 
-            st = con.createStatement();
-
-            rs = st.executeQuery(sql);
 
             PaytypeDetail paytypeDetail = new PaytypeDetail();
 
@@ -960,7 +978,7 @@ public class UserServiceImpl implements UserService {
             Date now = new Date();
             // 调用format()方法，将日期转换为字符串并输出
             StringBuffer recordsSb = new StringBuffer();
-            while (rs.next()) {
+            while (rs!=null&&rs.next()) {
 
                 //NUMBER,receivable,Saledate,start_time,real_income,end_time
                 String NUMBER = rs.getString("NUMBER").trim();
@@ -982,7 +1000,7 @@ public class UserServiceImpl implements UserService {
                 rs2 = st2.executeQuery(sql);
                 String real_income="";
                 String end_time="";
-                while (rs2.next()) {
+                while (rs2!=null&&rs2.next()) {
                     String number = rs2.getString("NUMBER").trim();
                     if(NUMBER.equals(number)){
                         real_income = rs2.getString("real_income").trim();
@@ -1024,7 +1042,7 @@ public class UserServiceImpl implements UserService {
 
             }
 
-            if(recordsSb!=null&&!"".equals(recordsSb)){
+            if(recordsSb!=null&&!"".equals(recordsSb.toString())){
                 String param="";
                 param = "{\n" +
                         "    \"columnNames\": [\n" +
@@ -1072,7 +1090,7 @@ public class UserServiceImpl implements UserService {
      * @return boolean
      * @throws
      **/
-    private boolean processDiscountDetail(String conStr,String day ,String date ) {
+    private boolean processDiscountDetail(String conStr,String day ,String datePar ) {
         String sql = "SELECT NUMBER,sum(Qty*OPRICE) as receivable,max(DATE) as Saledate,min(TIME) as start_time FROM CTI.dbf group by NUMBER";
         logger.info("sql=>" + sql);
         Connection con = null;
@@ -1089,9 +1107,11 @@ public class UserServiceImpl implements UserService {
         ResultSet rs2 = null;
         try {
 
-            st = con.createStatement();
+            if(con!=null){
+                st = con.createStatement();
 
-            rs = st.executeQuery(sql);
+                rs = st.executeQuery(sql);
+            }
 
             DiscountDetail discountDetail = new DiscountDetail();
 
@@ -1101,7 +1121,7 @@ public class UserServiceImpl implements UserService {
             Date now = new Date();
             // 调用format()方法，将日期转换为字符串并输出
             StringBuffer recordsSb = new StringBuffer();
-            while (rs.next()) {
+            while (rs!=null&&rs.next()) {
 
                 //NUMBER,receivable,Saledate,start_time,real_income,end_time
                 String NUMBER = rs.getString("NUMBER").trim();
@@ -1119,7 +1139,7 @@ public class UserServiceImpl implements UserService {
                 rs2 = st2.executeQuery(sql);
                 String real_income="";
                 String end_time="";
-                while (rs2.next()) {
+                while (rs2!=null&&rs2.next()) {
                     String number = rs2.getString("NUMBER").trim();
                     if(NUMBER.equals(number)){
                         real_income = rs2.getString("real_income").trim();
@@ -1138,7 +1158,7 @@ public class UserServiceImpl implements UserService {
                 discountDetail.setB_date(Saledate);
                 DecimalFormat g1=new DecimalFormat("00000");
                 String startZeroStr = g1.format(Integer.valueOf(NUMBER));
-                discountDetail.setSerial(date+startZeroStr);
+                discountDetail.setSerial(datePar+startZeroStr);
                 discountDetail.setStart_time(Saledate+" "+start_time);
                 discountDetail.setEnd_time(Saledate+" "+end_time);
                 discountDetail.setDiscount_type("优惠折扣");
@@ -1166,7 +1186,7 @@ public class UserServiceImpl implements UserService {
 
             }
 
-            if(recordsSb!=null&&!"".equals(recordsSb)){
+            if(recordsSb!=null&&!"".equals(recordsSb.toString())){
                 String param="";
                 param = "{\n" +
                         "    \"columnNames\": [\n" +
@@ -1202,7 +1222,8 @@ public class UserServiceImpl implements UserService {
         return false;
     }
 
-    public boolean apiDataStr(String dayStr,String table,String param){
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("DM_DEFAULT_ENCODING")
+    public boolean apiDataStr(String dayStr, String table, String param){
         //logger.info("apiDataStr(String param)=>"+param);
         if(false){
             return apiData(param);
@@ -1235,12 +1256,11 @@ public class UserServiceImpl implements UserService {
         logger.info("apiDataStr结果=>" + result1.isSuccess());
         if(result1.isSuccess()){
             AppendContentToFile.method2(dayStr+table+"_log.txt",param);
-            AppendContentToFile.method4(table+"_update_date.txt",dayStr);
         }
         return result1.isSuccess();
     }
 
-
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("DM_DEFAULT_ENCODING")
     public boolean apiData(String str){
         File file = null;
         try {
@@ -1257,7 +1277,10 @@ public class UserServiceImpl implements UserService {
             param.add("file", resource);
             param.add("corporationCode", RSAUtil.encrypt(RSAUtil.loadPublicKey(publicKeyStr),corporationCode.getBytes()));
             String result = rest.postForObject(urlHttpZip, param, String.class);
-            file.delete();
+            boolean delete = file.delete();
+            if(!delete){
+                logger.info(file.getPath()+"删除失败");
+            }
             Result result1 = JSON.parseObject(result, Result.class);
 
             logger.info("apiData 结果=>" + result);
@@ -1344,5 +1367,33 @@ public class UserServiceImpl implements UserService {
             // 忽略
         }
         return builder.toString();
+    }
+
+    public static List<String> getDays(String startTime, String endTime) {
+
+        // 返回的日期集合
+        List<String> days = new ArrayList<String>();
+
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        try {
+            Date start = dateFormat.parse(startTime);
+            Date end = dateFormat.parse(endTime);
+
+            Calendar tempStart = Calendar.getInstance();
+            tempStart.setTime(start);
+
+            Calendar tempEnd = Calendar.getInstance();
+            tempEnd.setTime(end);
+            tempEnd.add(Calendar.DATE, +1);// 日期加1(包含结束)
+            while (tempStart.before(tempEnd)) {
+                days.add(dateFormat.format(tempStart.getTime()));
+                tempStart.add(Calendar.DAY_OF_YEAR, 1);
+            }
+
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+        return days;
     }
 }
