@@ -145,34 +145,44 @@ public class UserServiceImpl implements UserService {
             if(auto){
                 //自动上传
                 List<String> days = getDays(readFile, dayPar);
-                for (int i = 1; i < days.size(); i++) {
-                    String uploadDay = days.get(i);
-                    String[] split = uploadDay.split("-");
-                    if(split!=null&&split.length==3){
-                        String uploadDate = split[0]+split[1]+split[2];
-                        String eodDirFileAuto=eodDataBaseUrl+File.separator+uploadDate;
-                        boolean eodDirExistAuto = dirExists(new File(eodDirFileAuto));
 
-                        //有清机后目录 只上传一次 如果当前日期大于[最后上传日期]才上传表一
-                        if(eodDirExistAuto){
-                            //如果当前日期大于[最后上传日期]才上传表一
-                            logger.info("正在上传_"+eodDirFileAuto);
+                if(days!=null){
 
-                            uploadEod(eodDirFileAuto,result,uploadDay,uploadDate);
-                            //有清机后目录,只上传清机后目录
-                            //无清机后目录
-                        }else{
-                            logger.info("清机后数据不存在_"+eodDirFileAuto);
-                            //只传今天的清机前数据
+                    if(days.size()==1){
+                        logger.info("清机后数据已上传_"+eodDataBaseUrl+File.separator+","+days.get(0));
+                    }
+
+                    for (int i = 1; i < days.size(); i++) {
+                        String uploadDay = days.get(i);
+                        String[] split = uploadDay.split("-");
+                        if(split!=null&&split.length==3){
+                            String uploadDate = split[0]+split[1]+split[2];
+                            String eodDirFileAuto=eodDataBaseUrl+File.separator+uploadDate;
+                            boolean eodDirExistAuto = dirExists(new File(eodDirFileAuto));
+
+                            //有清机后目录 只上传一次 如果当前日期大于[最后上传日期]才上传表一
+                            if(eodDirExistAuto){
+                                //如果当前日期大于[最后上传日期]才上传表一
+                                logger.info("正在上传_"+eodDirFileAuto);
+
+                                uploadEod(eodDirFileAuto,result,uploadDay,uploadDate,auto);
+                                //有清机后目录,只上传清机后目录
+                                //无清机后目录
+                            }else{
+                                logger.info("清机后数据不存在_"+eodDirFileAuto);
+                                //只传今天的清机前数据
                             /*if(uploadDate!=null&&uploadDate.equals(datePar)){
                             }*/
-                            logger.info("正在上传_"+fBPosDataBaseUrl);
-                            uploadFBPos(fBPosDataBaseUrl,result,dayPar,datePar);
-                            //直接返回，停止for 不允许跳过日期上传
-                            return result;
+                                logger.info("正在上传_"+fBPosDataBaseUrl);
+                                uploadFBPos(fBPosDataBaseUrl,result,dayPar,datePar);
+                                //直接返回，停止for 不允许跳过日期上传
+                                return result;
+                            }
                         }
                     }
                 }
+
+
             }else{
                 // 自动上传时 datePar 不应该为 now 而应该为上次上传至今天之间
                 String eodDirFilePar=eodDataBaseUrl+File.separator+datePar;
@@ -180,7 +190,8 @@ public class UserServiceImpl implements UserService {
                 //手动上传 par
                 if(eodDirExistPar){
                     logger.info("清机后数据存在_"+eodDirFilePar);
-                    uploadEod(eodDirFilePar,result,dayPar,datePar);
+                    //手动上传不更新 上传时间
+                    uploadEod(eodDirFilePar,result,dayPar,datePar,auto);
                     //无清机后目录
                 }else{
                     logger.info("清机后数据不存在_"+eodDirFilePar);
@@ -193,14 +204,14 @@ public class UserServiceImpl implements UserService {
         return result;
     }
 
-    private void uploadEod(String eodDirFile,Result result,String day,String datePar){
+    private void uploadEod(String eodDirFile,Result result,String day,String datePar,boolean auto){
         //自动上传 表一只从清机后取数，只上传一次，最好从【清机后】的数据库中取数据（如果存在这个数据库目录，才上传）
         //表1是一天传一次完整的，
         //自动上传，表一是从 【清机后】的数据库中取数据
         //自动上传 表二到表五 是从 营业中 数据库中取数据
         logger.info("正在上传==>"+eodDirFile);
 
-        boolean b1 = processSummary(eodDirFile, day,datePar);
+        boolean b1 = processSummary(eodDirFile, day,datePar,auto);
         if(!b1){
             logger.info("summary上传失败_"+eodDirFile);
             result.setSuccess(false);
@@ -347,7 +358,7 @@ public class UserServiceImpl implements UserService {
      * @return boolean
      * @throws
      **/
-    private boolean processSummary(String conStr,String day,String date ) {
+    private boolean processSummary(String conStr,String day,String date,boolean auto ) {
 
         double billNum=0;//账单笔数
         double discNum=0;//优惠笔数
@@ -560,8 +571,9 @@ public class UserServiceImpl implements UserService {
                             "}";
                     boolean summary1 = apiDataStr(day, "_Summary", param);
                     if(summary1){
-                        AppendContentToFile.method4("_Summary_update_date.txt",day);
-
+                        if(auto){
+                            AppendContentToFile.method4("_Summary_update_date.txt",day);
+                        }
                         //再加点日志，表二的数据日志，加一条汇总的日志：某天的应收总额，实收总额，优惠总额。
                         String log = conStr+"_summary上传成功,应收总额="+summary.getsReceivable()+"，实收总额="+summary.getsRealIncome()+"，优惠总额="+summary.getsDiscountTotal()+"";
                         AppendContentToFile.method2(sdf8.format(now)+"_Summary_and_Business_"+"log.txt",sdf3.format(new Date())+"_Summary==>"+log);
