@@ -111,12 +111,12 @@ public class UserServiceImpl implements UserService {
         String m = date.substring(4, 6);
         String d = date.substring(6,8 );
         String day =y+"-"+m+"-"+d;
-        String dirFile=eodDataBaseUrl+File.separator+date;
-        logger.info("输出：dirFile==>"+dirFile);
+        String eodDirFile=eodDataBaseUrl+File.separator+date;
+        logger.info("输出：dirFile==>"+eodDirFile);
         try {
             //自动上传时，在配置文件加一个最后上传日期。如果当前日期大于[最后上传日期]才上传表一。表一没有上传成功，
             // 后面的表也不用上传了,表一每天只上传一次 即可
-            boolean eodDirExist = dirExists(new File(dirFile));
+            boolean eodDirExist = dirExists(new File(eodDirFile));
             String readFile = readFile("_Summary_update_date.txt");
             if(readFile!=null&&"".equals(readFile)){
                 readFile="2010-01-01";
@@ -141,7 +141,7 @@ public class UserServiceImpl implements UserService {
                 //有清机后目录 只上传一次 如果当前日期大于[最后上传日期]才上传表一
                 if(eodDirExist){
                     if(!theDayIsUploaded){
-                        uploadEod(dirFile,result,day,date);
+                        uploadEod(eodDirFile,result,day,date);
                     }else{
                         logger.info("清机后数据已上传成功,自动上传不再上传数据_"+eodDataBaseUrl+date);
                     }
@@ -150,16 +150,19 @@ public class UserServiceImpl implements UserService {
 
                     //无清机后目录
                 }else{
-                    uploadFBPos(dirFile,result,day,date);
+                    logger.info("清机后数据不存在_"+eodDataBaseUrl+date);
+                    uploadFBPos(fBPosDataBaseUrl,result,day,date);
                     return result;
                 }
             }else{
                 //手动上传
                 if(eodDirExist){
-                    uploadEod(dirFile,result,day,date);
+                    logger.info("清机后数据存在_"+eodDataBaseUrl+date);
+                    uploadEod(eodDirFile,result,day,date);
                     return result;
                     //无清机后目录
                 }else{
+                    logger.info("清机后数据不存在_"+eodDataBaseUrl+date);
                     result.setMsg(result.getMsg()+","+"清机后数据不存在,数据上传失败_"+eodDataBaseUrl+date);
                     return result;
                 }
@@ -238,18 +241,17 @@ public class UserServiceImpl implements UserService {
             }
     }
 
-    private void uploadFBPos(String dirFile,Result result,String day,String date) {
-        logger.info(dirFile+"不存在");
-        result.setMsg(result.getMsg()+","+dirFile+"不存在");
+    private void uploadFBPos(String FBPosDirFile,Result result,String day,String date) {
+        logger.info(FBPosDirFile+"不存在");
+        result.setMsg(result.getMsg()+","+FBPosDirFile+"不存在");
         //result =false;
         //return result;
 
         //清机前数据只会自动上传
-        dirFile=fBPosDataBaseUrl;
         //表2-5是按流水传，3-5分钟传一次即可
         //手动传都传的清机后的吗? 是的
 
-        boolean fb = dirExists(new File(dirFile));
+        boolean fb = dirExists(new File(FBPosDirFile));
 
         if(fb){
 
@@ -259,7 +261,7 @@ public class UserServiceImpl implements UserService {
             //表1是一天传一次完整的，
             //自动上传，表一是从 【清机后】的数据库中取数据
             //自动上传 表二到表五 是从 营业中 数据库中取数据
-            logger.info("正在上传==>"+dirFile);
+            logger.info("正在上传==>"+FBPosDirFile);
 
             boolean b2 = processBusiness(fBPosDataBaseUrl, day,date);
             if(!b2){
@@ -272,7 +274,7 @@ public class UserServiceImpl implements UserService {
                 logger.info("Business上传成功_"+fBPosDataBaseUrl);
                 result.setMsg(result.getMsg()+","+"Business上传成功_"+fBPosDataBaseUrl);
             }
-            logger.info("正在上传==>"+dirFile);
+            logger.info("正在上传==>"+FBPosDirFile);
             boolean b1 = processBillDetail(fBPosDataBaseUrl, day,date);
             if(!b1){
                 logger.info("BillDetail上传失败_"+fBPosDataBaseUrl);
@@ -284,7 +286,7 @@ public class UserServiceImpl implements UserService {
                 logger.info("BillDetail上传成功_"+fBPosDataBaseUrl);
                 result.setMsg(result.getMsg()+","+"BillDetail上传成功_"+fBPosDataBaseUrl);
             }
-            logger.info("正在上传==>"+dirFile);
+            logger.info("正在上传==>"+FBPosDirFile);
             boolean b3 = processPaytypeDetail(fBPosDataBaseUrl, day,date);
             if(!b3){
                 logger.info("PaytypeDetail上传失败_"+fBPosDataBaseUrl);
@@ -296,7 +298,7 @@ public class UserServiceImpl implements UserService {
                 logger.info("PaytypeDetail上传成功_"+fBPosDataBaseUrl);
                 result.setMsg(result.getMsg()+","+"PaytypeDetail上传成功_"+fBPosDataBaseUrl);
             }
-            logger.info("正在上传==>"+dirFile);
+            logger.info("正在上传==>"+FBPosDirFile);
             boolean b4 = processDiscountDetail(fBPosDataBaseUrl, day,date);
             if(!b4){
                 logger.info("DiscountDetail上传失败_"+fBPosDataBaseUrl);
@@ -310,8 +312,8 @@ public class UserServiceImpl implements UserService {
             }
 
         }else{
-            logger.info(dirFile+"不存在");
-            result.setMsg(result.getMsg()+","+dirFile+"不存在");
+            logger.info(FBPosDirFile+"不存在");
+            result.setMsg(result.getMsg()+","+FBPosDirFile+"不存在");
             //result =false;
             //return result;
         }
