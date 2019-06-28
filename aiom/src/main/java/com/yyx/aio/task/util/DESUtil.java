@@ -160,11 +160,20 @@ public class DESUtil{
 
     /* ******************main*******************/
     public static void main (String [] args)throws Exception{
-        //加密后使用base64编码
+        /*//加密后使用base64编码
         System.out.println(Base64Utils.encode(DESUtil.encrypt("1111","0464d5fd152a49b0")));
 
-//使用base64解码后解密
+        //使用base64解码后解密
+        System.out.println(DESUtil.decrypt(Base64Utils.decode("9qtXq3yKItA="),"0464d5fd152a49b0"));*/
+
+
+        //加密后使用base64编码
+        System.out.println(Base64Utils.encode(DESUtil.encrypt("","0464d5fd152a49b0")));
+
+        //使用base64解码后解密
         System.out.println(DESUtil.decrypt(Base64Utils.decode("9qtXq3yKItA="),"0464d5fd152a49b0"));
+
+        //String encodeNull = Base64Utils.encode(DESUtil.encrypt("", keyStr));
 
     }
 }
