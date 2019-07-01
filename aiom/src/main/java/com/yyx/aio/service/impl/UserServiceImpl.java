@@ -595,7 +595,7 @@ public class UserServiceImpl implements UserService {
                             AppendContentToFile.method4("_Summary_update_date.txt",day);
                         }
                         //再加点日志，表二的数据日志，加一条汇总的日志：某天的应收总额，实收总额，优惠总额。
-                        String log = conStr+"_summary上传成功,应收总额="+summary.getsReceivable()+"，实收总额="+summary.getsRealIncome()+"，优惠总额="+summary.getsDiscountTotal()+"";
+                        String log = conStr+"_summary上传成功,应收总额="+summary.getsReceivable()+"，实收总额="+summary.getsRealIncome()+"，优惠总额="+summary.getsDiscountTotal()+"，优惠笔数="+discNum;
                         AppendContentToFile.method2(sdf8.format(now)+"_Summary_and_Business_"+"log.txt",sdf3.format(new Date())+"_Summary==>"+log);
                     }
                     return summary1;
