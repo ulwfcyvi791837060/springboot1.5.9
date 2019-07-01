@@ -435,12 +435,32 @@ public class UserServiceImpl implements UserService {
 
                 DecimalFormat g1=new DecimalFormat("00000");
                 String startZeroStr = g1.format(Integer.valueOf(NUMBER));
-                double disc = Double.parseDouble(receivable) - Double.parseDouble(real_income);
-                receivableSum=receivableSum+Double.parseDouble(receivable);
-                realIncomeSum=realIncomeSum+Double.parseDouble(real_income);
+                /*logger.info(receivable+"empty String");
+                logger.info(real_income+"empty String");*/
 
+                if("".equals(receivable)||"".equals(real_income)){
+                    logger.info("NUMBER==>"+NUMBER+","+receivable+"empty String");
+                    logger.info("sql==>"+"SELECT NUMBER,sum(AMOUNT) as real_income,max(TIME) as end_time FROM CTP.dbf where not isnull(AMOUNT) and " +
+                            "NUMBER ="+NUMBER+" AND PAYBY NOT in (SELECT code FROM PAYMENT.dbf WHERE NOT SALES) group by NUMBER \n");
+                    if("".equals(receivable)){
+                        receivable="0";
+                    }
 
-                if (Double.parseDouble(receivable)>Double.parseDouble(real_income)) {
+                    if("".equals(real_income)){
+                        real_income="0";
+                    }
+
+                }
+
+                double realIncomeD = Double.parseDouble(real_income);
+                double receivableD = Double.parseDouble(receivable);
+                double disc = receivableD - realIncomeD;
+                receivableSum=receivableSum+receivableD;
+                realIncomeSum=realIncomeSum+realIncomeD;
+
+                //【绝对值（应收金额-实际收入）> 0.001】Math.abs(-3.5)
+                boolean b = Math.abs(receivableD - realIncomeD) > 0.001;
+                if (b) {
                     discNum ++;//优惠笔数
                     discountSum=discountSum+disc;
                 }
@@ -680,7 +700,16 @@ public class UserServiceImpl implements UserService {
                     }
                 }
 
+                if("".equals(receivable)){
+                    receivable="0";
+                }
 
+                if("".equals(real_income)){
+                    real_income="0";
+                }
+
+                double realIncomeD = Double.parseDouble(real_income);
+                double receivableD = Double.parseDouble(receivable);
 
                 business.setLocation_id("");
                 business.setStore_id("");
@@ -691,17 +720,17 @@ public class UserServiceImpl implements UserService {
                 business.setSerial(date+startZeroStr);
                 business.setStart_time(Saledate+" "+start_time);
                 business.setEnd_time(Saledate+" "+end_time);
-                business.setReceivable(Double.parseDouble(receivable));
-                business.setReal_income(Double.parseDouble(real_income));
-                double v = Double.parseDouble(receivable) - Double.parseDouble(real_income);
+                business.setReceivable(receivableD);
+                business.setReal_income(realIncomeD);
+                double v = receivableD - realIncomeD;
                 business.setDiscount_amount(Double.parseDouble(df.format(v)));
                 business.setIs_chargeback("否");
                 business.setChargeback(0.0D);
                 business.setTime(sdf3.format(now));
                 business.setRefresh_time(sdf3.format(now));
 
-                receivableSum=receivableSum+Double.parseDouble(receivable);
-                realIncomeSum=realIncomeSum+Double.parseDouble(real_income);
+                receivableSum=receivableSum+receivableD;
+                realIncomeSum=realIncomeSum+realIncomeD;
                 discountSum=discountSum+v;
 
                 if(recordsSb.length()>0){
@@ -846,6 +875,17 @@ public class UserServiceImpl implements UserService {
                     }
                 }
 
+                if("".equals(receivable)){
+                    receivable="0";
+                }
+
+                if("".equals(real_income)){
+                    real_income="0";
+                }
+
+                double realIncomeD = Double.parseDouble(real_income);
+                double receivableD = Double.parseDouble(receivable);
+
                 billDetail.setLocation_id("");
                 billDetail.setStore_id("");
                 billDetail.setStore_name("");
@@ -859,12 +899,12 @@ public class UserServiceImpl implements UserService {
                 billDetail.setItem_category("");
                 billDetail.setItem_sub_category("");
                 //折前单价 = receivable
-                billDetail.setOriginal_price(Double.parseDouble(receivable));
-                billDetail.setActual_price(Double.parseDouble(real_income));
+                billDetail.setOriginal_price(receivableD);
+                billDetail.setActual_price(realIncomeD);
                 billDetail.setItem_num(1D);
-                billDetail.setReceivable(Double.parseDouble(receivable));
+                billDetail.setReceivable(receivableD);
                 billDetail.setReal_income(0.0D);
-                billDetail.setDisc_money(Double.parseDouble(receivable)-Double.parseDouble(real_income));
+                billDetail.setDisc_money(receivableD-realIncomeD);
                 billDetail.setIs_chargeback("否");
                 billDetail.setChargeback_price(0.0D);
                 billDetail.setChargeback_num(0.0D);
@@ -1020,6 +1060,17 @@ public class UserServiceImpl implements UserService {
                     }
                 }
 
+                if("".equals(receivable)){
+                    receivable="0";
+                }
+
+                if("".equals(real_income)){
+                    real_income="0";
+                }
+                double realIncomeD = Double.parseDouble(real_income);
+                double receivableD = Double.parseDouble(receivable);
+
+
                 paytypeDetail.setLocation_id("");
                 paytypeDetail.setStore_id("");
                 paytypeDetail.setStore_name("");
@@ -1030,7 +1081,7 @@ public class UserServiceImpl implements UserService {
                 paytypeDetail.setStart_time(Saledate+" "+start_time);
                 paytypeDetail.setEnd_time(Saledate+" "+end_time);
                 paytypeDetail.setPaytype("现金");
-                paytypeDetail.setPaytype_income(Double.parseDouble(real_income));
+                paytypeDetail.setPaytype_income(realIncomeD);
                 paytypeDetail.setTime(sdf3.format(now));
                 paytypeDetail.setRefresh_time(sdf3.format(now));
 
@@ -1160,6 +1211,17 @@ public class UserServiceImpl implements UserService {
 
                 }
 
+                if("".equals(receivable)){
+                    receivable="0";
+                }
+
+                if("".equals(real_income)){
+                    real_income="0";
+                }
+
+                double realIncomeD = Double.parseDouble(real_income);
+                double receivableD = Double.parseDouble(receivable);
+
                 /*表五，也用表二的SQL
                 优惠类型 统一写 【优惠折扣】
                 优惠金额* = 应收金额*- 实际收入*
@@ -1174,7 +1236,7 @@ public class UserServiceImpl implements UserService {
                 discountDetail.setStart_time(Saledate+" "+start_time);
                 discountDetail.setEnd_time(Saledate+" "+end_time);
                 discountDetail.setDiscount_type("优惠折扣");
-                discountDetail.setDiscount_amount(Double.parseDouble(receivable)-Double.parseDouble(real_income));
+                discountDetail.setDiscount_amount(receivableD-realIncomeD);
                 discountDetail.setTime(sdf3.format(now));
                 discountDetail.setRefresh_time(sdf3.format(now));
 
